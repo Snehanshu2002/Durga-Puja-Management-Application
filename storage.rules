@@ -1,0 +1,74 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function getUserData() {
+      return firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function isSuperAdmin() {
+      return isAuthenticated() && (
+        !firestore.exists(/databases/(default)/documents/users/$(request.auth.uid)) ||
+        getUserData().roleId == 'super_admin'
+      );
+    }
+
+    function isActiveUser() {
+      return isAuthenticated() && (
+        !firestore.exists(/databases/(default)/documents/users/$(request.auth.uid)) ||
+        getUserData().status == 'ACTIVE'
+      );
+    }
+
+    function userHasEventAccess(eventId) {
+      return isSuperAdmin() || (
+        isActiveUser() && (
+          getUserData().assignedEventIds == null ||
+          eventId in getUserData().assignedEventIds
+        )
+      );
+    }
+
+    function isValidImageOrPdf() {
+      return request.resource.size < 10 * 1024 * 1024 &&
+        (request.resource.contentType.matches('image/.*') ||
+         request.resource.contentType == 'application/pdf');
+    }
+
+    // Event-scoped paths: events/{eventId}/collections/{collectionId}/...
+    match /events/{eventId}/{allPaths=**} {
+      allow read: if isAuthenticated() && userHasEventAccess(eventId);
+      allow create, update: if isAuthenticated() && userHasEventAccess(eventId) && isValidImageOrPdf();
+      allow delete: if isAuthenticated() && (isSuperAdmin() || userHasEventAccess(eventId));
+    }
+
+    // Direct legacy / alternative event paths
+    match /collections/{eventId}/{allPaths=**} {
+      allow read: if isAuthenticated() && userHasEventAccess(eventId);
+      allow create, update: if isAuthenticated() && userHasEventAccess(eventId) && isValidImageOrPdf();
+      allow delete: if isAuthenticated() && (isSuperAdmin() || userHasEventAccess(eventId));
+    }
+
+    match /expenses/{eventId}/{allPaths=**} {
+      allow read: if isAuthenticated() && userHasEventAccess(eventId);
+      allow create, update: if isAuthenticated() && userHasEventAccess(eventId) && isValidImageOrPdf();
+      allow delete: if isAuthenticated() && (isSuperAdmin() || userHasEventAccess(eventId));
+    }
+
+    match /custody/{eventId}/{allPaths=**} {
+      allow read: if isAuthenticated() && userHasEventAccess(eventId);
+      allow create, update: if isAuthenticated() && userHasEventAccess(eventId) && isValidImageOrPdf();
+      allow delete: if isAuthenticated() && (isSuperAdmin() || userHasEventAccess(eventId));
+    }
+
+    // User profile images
+    match /users/{userId}/{allPaths=**} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && (request.auth.uid == userId || isSuperAdmin()) && isValidImageOrPdf();
+    }
+  }
+}

@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+  <meta charset="UTF-8">
+  <title>Durga Puja Management App — Complete Workflow Guide</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&family=Hind:wght@400;600;700&display=swap');
+    
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    
+    body {
+      font-family: 'Inter', 'Hind', sans-serif;
+      background-color: #f8fafc;
+      color: #1e293b;
+      line-height: 1.6;
+      padding: 24px;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      background: #ffffff;
+      padding: 40px;
+      border-radius: 12px;
+      box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+    }
+
+    .header {
+      text-align: center;
+      border-bottom: 3px solid #e11d48;
+      padding-bottom: 24px;
+      margin-bottom: 32px;
+    }
+
+    .header h1 {
+      font-size: 28px;
+      color: #9f1239;
+      margin-bottom: 8px;
+      font-weight: 800;
+    }
+
+    .header p {
+      font-size: 15px;
+      color: #64748b;
+      font-weight: 600;
+    }
+
+    .badge {
+      display: inline-block;
+      background: #ffe4e6;
+      color: #9f1239;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 700;
+      margin-top: 8px;
+      text-transform: uppercase;
+    }
+
+    .section {
+      margin-bottom: 32px;
+    }
+
+    h2 {
+      font-size: 20px;
+      color: #0f172a;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      border-left: 4px solid #e11d48;
+      padding-left: 12px;
+    }
+
+    p {
+      margin-bottom: 12px;
+      font-size: 14.5px;
+      color: #334155;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0;
+      font-size: 13.5px;
+    }
+
+    table th, table td {
+      border: 1px solid #cbd5e1;
+      padding: 10px 14px;
+      text-align: left;
+    }
+
+    table th {
+      background-color: #f1f5f9;
+      color: #0f172a;
+      font-weight: 700;
+    }
+
+    table tr:nth-child(even) {
+      background-color: #f8fafc;
+    }
+
+    .step-card {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 16px 20px;
+      margin-bottom: 16px;
+      position: relative;
+    }
+
+    .step-card h3 {
+      font-size: 16px;
+      color: #be123c;
+      margin-bottom: 6px;
+    }
+
+    .step-card p {
+      font-size: 13.5px;
+      margin-bottom: 4px;
+    }
+
+    .alert-box {
+      background-color: #fff1f2;
+      border: 1px solid #fecdd3;
+      color: #9f1239;
+      padding: 14px 18px;
+      border-radius: 8px;
+      margin: 16px 0;
+      font-size: 13.5px;
+    }
+
+    .talking-points {
+      background: #ecfdf5;
+      border: 1px solid #a7f3d0;
+      border-radius: 8px;
+      padding: 20px;
+      margin-top: 24px;
+    }
+
+    .talking-points h3 {
+      color: #065f46;
+      font-size: 16px;
+      margin-bottom: 12px;
+    }
+
+    .talking-points ul {
+      margin-left: 20px;
+      color: #047857;
+      font-size: 14px;
+    }
+
+    .talking-points li {
+      margin-bottom: 8px;
+    }
+
+    .footer {
+      text-align: center;
+      margin-top: 36px;
+      padding-top: 18px;
+      border-top: 1px solid #e2e8f0;
+      font-size: 12px;
+      color: #94a3b8;
+    }
+
+    @media print {
+      body {
+        background: none;
+        padding: 0;
+      }
+      .container {
+        box-shadow: none;
+        padding: 16px;
+        max-width: 100%;
+      }
+      .no-print {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <div class="header">
+      <h1>🌺 Durga Puja Management App</h1>
+      <p>Aam Bhasha me Samajhiye: Chanda lene se lekar Kharcha, Approval aur Balance Sheet tak ka Pura Process</p>
+      <span class="badge">Non-IT Committee Guide</span>
+    </div>
+
+    <!-- SECTION 1 -->
+    <div class="section">
+      <h2>🎯 1. Is App Ka Asli Maqsad Kya Hai?</h2>
+      <p>Durga Puja, Bhasani Utsav ya Natak (Opera/Jatra) jaise bade events me har saal lakho rupaye ka len-den hota hai. Pehle kacchi paper slips aur diary me hisab likhne se <b>paise ka hisab gadbad ho jata tha</b> aur vivad hote the.</p>
+      <p><b>Yeh App in sabhi samasyaon ko 100% digital aur transparent banata hai.</b> Har ek rupaye ki raseed digital banti hai aur bina double-check approval ke koi entry final balance sheet me nahi jati.</p>
+    </div>
+
+    <!-- SECTION 2 -->
+    <div class="section">
+      <h2>👥 2. Kisko Kya Zimmedari Di Gayi Hai? (6 Main Roles)</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Role (Padvi)</th>
+            <th>Asli Zindagi me Kaun Hai?</th>
+            <th>Kya Kaam Kar Sakta Hai?</th>
+            <th>Kya Nahi Kar Sakta?</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><b>1. Super Admin</b></td>
+            <td>Samiti Mukhiya / IT In-charge</td>
+            <td>Naye Events banana, Naye Users jodna, Categories banana.</td>
+            <td>Approved hisab delete/edit nahi kar sakta.</td>
+          </tr>
+          <tr>
+            <td><b>2. President (Sabhapati)</b></td>
+            <td>Committee President / Adhyaksh</td>
+            <td>Pura live dashboard dekhna, Chanda/Kharcha approve karna.</td>
+            <td>Users add/deactivate nahi kar sakta.</td>
+          </tr>
+          <tr>
+            <td><b>3. Treasurer (Khazanchi)</b></td>
+            <td>Samiti ka Cashier / Khazanchi</td>
+            <td>Cash sambhalna, Kharcha approve karna, Bank me jama karna.</td>
+            <td>Apni banayi entry khud approve nahi kar sakta.</td>
+          </tr>
+          <tr>
+            <td><b>4. Manager</b></td>
+            <td>Pandal / Event Manager</td>
+            <td>Daily kharche ki entry dalna, Chanda target dekhna.</td>
+            <td>Dusro ke records approve nahi kar sakta.</td>
+          </tr>
+          <tr>
+            <td><b>5. Collector</b></td>
+            <td>Chanda lene wale Sadasya</td>
+            <td>Digital raseed banana, cash Treasurer ko handover karna.</td>
+            <td>Koi entry approve nahi kar sakta.</td>
+          </tr>
+          <tr>
+            <td><b>6. Viewer</b></td>
+            <td>Senior Trustees / Auditor</td>
+            <td>Sirf hisab aur balance sheet dekh sakta hai (Read-Only).</td>
+            <td>Koi bhi data change/add/delete nahi kar sakta.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- SECTION 3 -->
+    <div class="section">
+      <h2>🔄 3. Step-by-Step Pura Process (Workflow)</h2>
+
+      <div class="step-card">
+        <h3>🔹 STEP 1: Event & Targets Set Karna (Budgeting)</h3>
+        <p>• <b>Super Admin</b> naya event banata hai (Jaise: <i>Bhasani Utsab 2026</i> ya <i>Opera Jatra 2026</i>).</p>
+        <p>• Har ek sadasya ka Chanda Target set hota hai taaki live pata chale ki kiska kitna target baki hai.</p>
+      </div>
+
+      <div class="step-card">
+        <h3>🔹 STEP 2: Chanda Lene Ka Process (Collection Flow)</h3>
+        <p>• <b>Collector</b> donor ke paas jata hai aur app me <b>"Add Collection"</b> karta hai.</p>
+        <p>• Payment mode: <b>Cash, UPI (GPay/PhonePe), Bank Transfer ya Cheque</b>.</p>
+        <p>• Donor ke mobile par turant digital receipt ban jati hai.</p>
+        <p>• <i>Status rehta hai: PENDING</i> (Abhi final hisab me nahi juda).</p>
+      </div>
+
+      <div class="step-card">
+        <h3>🔹 STEP 3: 4-Eyes Approval Rule (Double Check Suraksha)</h3>
+        <p>• <b>Treasurer ya President</b> entry ko check karke <b>"APPROVE"</b> karte hain.</p>
+        <p>• <b>Suraksha Niyam:</b> Jisne entry dali hai wo khud use approve nahi kar sakta (Self-Approval Blocked).</p>
+        <p>• Approve hote hi official Receipt No. lag jata hai aur final hisab me jud jata hai.</p>
+      </div>
+
+      <div class="step-card">
+        <h3>🔹 STEP 4: Cash Custody / Hath-badli (Cash Handover)</h3>
+        <p>• Din ke end me Collector jitna cash ikathha karta hai (Jaise ₹10,000), wo Treasurer ko physical de deta hai.</p>
+        <p>• Collector app me <b>"Handover Cash"</b> request karta hai, aur Treasurer <b>"Accept"</b> dabata hai.</p>
+        <p>• Isse Collector ki liability khatam ho jati hai aur cash Treasurer ke naam pe shift ho jata hai.</p>
+      </div>
+
+      <div class="step-card">
+        <h3>🔹 STEP 5: Kharcha (Expense Management)</h3>
+        <p>• Pandal, Light, Sound, Idol ya Bhog kharche ka bill photo ke sath app me upload hota hai.</p>
+        <p>• Treasurer / President bill dekhkar approve karte hain tabhi kharcha pass hota hai.</p>
+      </div>
+
+      <div class="step-card">
+        <h3>🔹 STEP 6: Bank Deposit & Final Balance Sheet</h3>
+        <p>• Treasurer ikathha hua cash samiti ke official Bank account me jama karke challan number update karta hai.</p>
+        <p>• Meeting me ek click par <b>PDF / Excel Report</b> nikal aati hai.</p>
+      </div>
+    </div>
+
+    <!-- SECTION 4 -->
+    <div class="section">
+      <h2>🔒 4. Suraksha Niyam (Kyun Isme Koi Ghapla Nahi Ho Sakta?)</h2>
+      <div class="alert-box">
+        <b>1. Approved Records Locked:</b> Ek baar entry approve ho gayi toh use koi bhi delete ya modify nahi kar sakta.<br>
+        <b>2. Single-Device Security:</b> Ek user ek phone me login hai to dusre phone me open karte hi pehla logout ho jayega.<br>
+        <b>3. Audit Log:</b> Har ek click, approval aur deletion ka digital record date aur time ke sath rehta hai.
+      </div>
+    </div>
+
+    <!-- SECTION 5 -->
+    <div class="talking-points">
+      <h3>📢 5. Samiti Meeting me 1 Minute me Bolne ke Points:</h3>
+      <ul>
+        <li>1. <i>"Ghar-ghar chanda lena 100% digital aur transparent ho gaya hai — donor ko digital receipt milti hai."</i></li>
+        <li>2. <i>"Collector jab tak Treasurer ko cash dekar confirm nahi karwayega, tab tak paisa Collector ke hisab me dikhega."</i></li>
+        <li>3. <i>"Koi bhi kharcha bina bill photo aur adhyaksh/treasurer approval ke pass nahi ho sakta."</i></li>
+        <li>4. <i>"Utsav khatam hone ke baad kisi ko hisab jodne ki zaroorat nahi — ek click me puri Balance Sheet PDF me print ho jati hai."</i></li>
+      </ul>
+    </div>
+
+    <div class="footer">
+      Durga Puja Management System • Confidential & Committee Internal Use Only
+    </div>
+  </div>
+
+</body>
+</html>

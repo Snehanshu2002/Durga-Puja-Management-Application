@@ -1,0 +1,10 @@
+{
+  "projects": {
+    "default": "durga-puja-manager",
+    "prod": "durga-puja-manager",
+    "dev": "durga-puja-manager-dev",
+    "qa": "durga-puja-manager-dev"
+  },
+  "targets": {},
+  "etags": {}
+}

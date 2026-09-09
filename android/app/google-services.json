@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "188950366932",
+    "project_id": "durga-puja-manager",
+    "storage_bucket": "durga-puja-manager.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:188950366932:android:a8606e8703e68f8bc40941",
+        "android_client_info": {
+          "package_name": "com.durgapujamanager.durgapuja_manager"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBOOTiqQy-GUQ_b91TZeuOjAw3GVZ9Mndg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

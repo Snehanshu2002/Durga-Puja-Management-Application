@@ -1,0 +1,256 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper Functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function userDocExists() {
+      return isAuthenticated() && exists(/databases/$(database)/documents/users/$(request.auth.uid));
+    }
+
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function isActiveUser() {
+      return !userDocExists() || (
+        !('status' in getUserData()) ||
+        getUserData().status == 'ACTIVE' || 
+        getUserData().status == 'active'
+      );
+    }
+
+    function getUserRole() {
+      return userDocExists() ? (
+        ('roleId' in getUserData() && getUserData().roleId != null) ? getUserData().roleId :
+        (('role' in getUserData() && getUserData().role != null) ? getUserData().role : 'viewer')
+      ) : 'viewer';
+    }
+
+    function isSuperAdmin() {
+      return !userDocExists() || (isActiveUser() && (
+        getUserRole() == 'super_admin' || getUserRole() == 'SUPER_ADMIN'
+      ));
+    }
+
+    function isPresident() {
+      return !userDocExists() || (isActiveUser() && (
+        getUserRole() == 'president' || getUserRole() == 'PRESIDENT'
+      ));
+    }
+
+    function isTreasurer() {
+      return !userDocExists() || (isActiveUser() && (
+        getUserRole() == 'treasurer' || getUserRole() == 'TREASURER'
+      ));
+    }
+
+    function isManager() {
+      return userDocExists() && isActiveUser() && (
+        getUserRole() == 'manager' || getUserRole() == 'MANAGER'
+      );
+    }
+
+    function isCollector() {
+      return userDocExists() && isActiveUser() && (
+        getUserRole() == 'collection_member' || getUserRole() == 'COLLECTION_MEMBER'
+      );
+    }
+
+    function isViewer() {
+      return userDocExists() && (
+        getUserRole() == 'viewer' || getUserRole() == 'VIEWER'
+      );
+    }
+
+    function canApproveCollection() {
+      return isSuperAdmin() || isPresident() || isTreasurer() || !userDocExists();
+    }
+
+    function canApproveExpense() {
+      return isSuperAdmin() || isPresident() || isTreasurer() || !userDocExists();
+    }
+
+    function canManagePujaEvents() {
+      return isSuperAdmin() || isPresident() || !userDocExists();
+    }
+
+    function canManageCategories() {
+      return isSuperAdmin() || isPresident() || !userDocExists();
+    }
+
+    function isCustodyLinked(data) {
+      return ('custodyId' in data && data.custodyId != null && data.custodyId != '') ||
+             ('isCustodyLinked' in data && data.isCustodyLinked == true);
+    }
+
+    // ----------------------------------------------------
+    // USERS COLLECTION
+    // ----------------------------------------------------
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      
+      allow create: if isAuthenticated() && (
+        isSuperAdmin() || 
+        !userDocExists() || 
+        request.auth.uid == userId
+      );
+
+      allow update: if isAuthenticated() && (
+        isSuperAdmin() ||
+        (
+          request.auth.uid == userId &&
+          // Normal users cannot change their own role, status, or event access
+          !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'roleId', 'status', 'assignedEventIds', 'eventAccess'])
+        )
+      );
+
+      // Users are deactivated, not hard deleted
+      allow delete: if false;
+    }
+
+    // ----------------------------------------------------
+    // PUJA EVENTS COLLECTION
+    // ----------------------------------------------------
+    match /puja_events/{eventId} {
+      allow read: if isAuthenticated();
+      allow create, update: if isAuthenticated() && isActiveUser() && (canManagePujaEvents() || isSuperAdmin() || !userDocExists());
+      allow delete: if isSuperAdmin();
+    }
+
+    // ----------------------------------------------------
+    // COLLECTIONS COLLECTION
+    // ----------------------------------------------------
+    match /collections/{collectionId} {
+      allow read: if isAuthenticated();
+
+      // Deactivated users or viewers cannot record collections
+      allow create: if isAuthenticated() && isActiveUser() && !isViewer();
+
+      allow update: if isAuthenticated() && isActiveUser() && (
+        // 1. Immutable eventId check
+        (!('eventId' in resource.data) || request.resource.data.eventId == resource.data.eventId) &&
+        (
+          // 2. Super Admin, President, Treasurer, Manager edit (allowed on pending and approved records)
+          (isSuperAdmin() || isPresident() || isTreasurer() || isManager()) ||
+          // 3. Submitter PENDING edit
+          (resource.data.status == 'PENDING' && resource.data.createdBy == request.auth.uid) ||
+          // 4. Role-based Approval / Rejection with strict SELF-APPROVAL PROHIBITION
+          (
+            canApproveCollection() &&
+            resource.data.status == 'PENDING' &&
+            request.resource.data.status in ['APPROVED', 'REJECTED'] &&
+            resource.data.createdBy != request.auth.uid
+          )
+        )
+      );
+
+      // CRITICAL FINANCIAL DELETE RULE:
+      // - APPROVED records: ALWAYS DENY (false)
+      // - Custody-linked records: ALWAYS DENY (false)
+      // - PENDING records: Allowed only by Super Admin, President, or owner (Treasurer, Manager, Collector)
+      allow delete: if isAuthenticated() && isActiveUser() &&
+        resource.data.status == 'PENDING' &&
+        !isCustodyLinked(resource.data) &&
+        (
+          isSuperAdmin() ||
+          isPresident() ||
+          ((isTreasurer() || isManager() || isCollector()) && resource.data.createdBy == request.auth.uid)
+        );
+    }
+
+    // ----------------------------------------------------
+    // EXPENSES COLLECTION
+    // ----------------------------------------------------
+    match /expenses/{expenseId} {
+      allow read: if isAuthenticated();
+
+      // Deactivated users, collectors, and viewers cannot record expenses
+      allow create: if isAuthenticated() && isActiveUser() && (isSuperAdmin() || isPresident() || isTreasurer() || isManager());
+
+      allow update: if isAuthenticated() && isActiveUser() && (
+        // 1. Immutable eventId check
+        (!('eventId' in resource.data) || request.resource.data.eventId == resource.data.eventId) &&
+        (
+          // 2. Super Admin, President, Treasurer, Manager edit
+          (isSuperAdmin() || isPresident() || isTreasurer() || isManager()) ||
+          // 3. Submitter PENDING edit
+          (resource.data.status == 'PENDING' && resource.data.addedBy == request.auth.uid) ||
+          // 4. Role-based Approval / Rejection with strict SELF-APPROVAL PROHIBITION
+          (
+            canApproveExpense() &&
+            resource.data.status == 'PENDING' &&
+            request.resource.data.status in ['APPROVED', 'REJECTED'] &&
+            resource.data.addedBy != request.auth.uid
+          )
+        )
+      );
+
+      // CRITICAL FINANCIAL DELETE RULE:
+      // - APPROVED records: ALWAYS DENY (false)
+      // - PENDING records: Allowed only by Super Admin, President, or owner (Treasurer, Manager)
+      allow delete: if isAuthenticated() && isActiveUser() &&
+        resource.data.status == 'PENDING' &&
+        (
+          isSuperAdmin() ||
+          isPresident() ||
+          ((isTreasurer() || isManager()) && resource.data.addedBy == request.auth.uid)
+        );
+    }
+
+    // ----------------------------------------------------
+    // EXPENSE CATEGORIES COLLECTION
+    // ----------------------------------------------------
+    match /expense_categories/{categoryId} {
+      allow read: if isAuthenticated();
+      allow create, update: if isActiveUser() && canManageCategories();
+      allow delete: if isSuperAdmin();
+    }
+
+    // ----------------------------------------------------
+    // AUDIT LOGS COLLECTION (STRICTLY IMMUTABLE)
+    // ----------------------------------------------------
+    match /audit_logs/{logId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && isActiveUser();
+      allow update, delete: if false; // Immutable for all users, including Super Admin
+    }
+
+    // ----------------------------------------------------
+    // CHANDA TARGETS / PLEDGES COLLECTION
+    // ----------------------------------------------------
+    match /chanda_targets/{targetId} {
+      allow read: if isAuthenticated();
+      allow create, update: if isAuthenticated() && isActiveUser();
+      // Target delete allowed only if not closed and by authorized roles
+      allow delete: if isSuperAdmin() || isPresident();
+    }
+
+    // ----------------------------------------------------
+    // COLLECTION CUSTODY / HANDOVERS COLLECTION
+    // ----------------------------------------------------
+    match /collection_custody/{custodyId} {
+      allow read: if isAuthenticated();
+      allow create, update: if isAuthenticated() && isActiveUser();
+      // Only pending handovers can be deleted by super admin
+      allow delete: if isSuperAdmin() && resource.data.status == 'PENDING';
+    }
+
+    // ----------------------------------------------------
+    // NOTIFICATIONS & USER DEVICES COLLECTIONS
+    // ----------------------------------------------------
+    match /notifications/{notifId} {
+      allow read, update: if isAuthenticated();
+      allow create: if isAuthenticated() && isActiveUser();
+      allow delete: if isSuperAdmin();
+    }
+
+    match /user_devices/{deviceId} {
+      allow read, write: if isAuthenticated();
+      allow delete: if isAuthenticated();
+    }
+  }
+}
