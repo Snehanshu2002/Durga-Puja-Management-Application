@@ -44,6 +44,8 @@ class DJCollectionSeeder {
     {"name": "Titu", "amount": 200},
   ];
 
+  static final List<Map<String, dynamic>> julyEntries = [];
+
   static final Map<String, String> memberPhones = {
     'Snehanshu Sahoo': '7735382544',
     'Snehanshu (Kalu)': '7735382544',

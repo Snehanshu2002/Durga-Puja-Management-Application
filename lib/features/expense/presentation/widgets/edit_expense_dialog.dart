@@ -310,6 +310,7 @@ class _EditExpenseDialogState extends ConsumerState<EditExpenseDialog> {
       status: widget.expense.status,
       isOwner: isOwner,
     );
+    final isApproved = widget.expense.isApproved;
 
     final categories = ref.watch(expenseCategoriesProvider);
     final activeCategories = categories.where((c) => c.isActive).toList();
@@ -317,9 +318,12 @@ class _EditExpenseDialogState extends ConsumerState<EditExpenseDialog> {
     return AlertDialog(
       title: Row(
         children: [
-          const Icon(Icons.edit_note, color: Colors.redAccent),
+          Icon(
+            isApproved ? Icons.receipt_long : Icons.edit_note,
+            color: isApproved ? Colors.green : Colors.redAccent,
+          ),
           const SizedBox(width: 8),
-          Text(widget.expense.isApproved ? 'View Expense Entry' : 'Edit Expense Entry'),
+          Text(isApproved ? 'View Expense Entry' : 'Edit Expense Entry'),
         ],
       ),
       content: SingleChildScrollView(
@@ -328,8 +332,35 @@ class _EditExpenseDialogState extends ConsumerState<EditExpenseDialog> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+              if (isApproved)
+                Container(
+                  margin: const EdgeInsets.only(bottom: 16),
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.green.shade50,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.green.shade200),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.verified, color: Colors.green, size: 20),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'This expense is Approved & verified. Records cannot be modified or deleted.',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.green.shade900,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               TextFormField(
                 controller: _paidToController,
+                readOnly: isApproved,
                 decoration: const InputDecoration(
                   labelText: 'Paid To (Vendor / Contractor) *',
                   prefixIcon: Icon(Icons.store),
@@ -340,6 +371,7 @@ class _EditExpenseDialogState extends ConsumerState<EditExpenseDialog> {
               const SizedBox(height: 12),
               TextFormField(
                 controller: _descriptionController,
+                readOnly: isApproved,
                 decoration: const InputDecoration(
                   labelText: 'Description / Purpose *',
                   prefixIcon: Icon(Icons.description),
@@ -350,6 +382,7 @@ class _EditExpenseDialogState extends ConsumerState<EditExpenseDialog> {
               const SizedBox(height: 12),
               TextFormField(
                 controller: _amountController,
+                readOnly: isApproved,
                 keyboardType: TextInputType.number,
                 decoration: const InputDecoration(
                   labelText: 'Amount (₹) *',
@@ -377,7 +410,7 @@ class _EditExpenseDialogState extends ConsumerState<EditExpenseDialog> {
                     child: Text(cat.name),
                   );
                 }).toList(),
-                onChanged: (val) {
+                onChanged: isApproved ? null : (val) {
                   if (val != null) setState(() => _selectedCategoryId = val);
                 },
               ),
@@ -394,13 +427,14 @@ class _EditExpenseDialogState extends ConsumerState<EditExpenseDialog> {
                     child: Text(mode.label),
                   );
                 }).toList(),
-                onChanged: (val) {
+                onChanged: isApproved ? null : (val) {
                   if (val != null) setState(() => _selectedPaymentMode = val);
                 },
               ),
               const SizedBox(height: 12),
               TextFormField(
                 controller: _remarkController,
+                readOnly: isApproved,
                 decoration: const InputDecoration(
                   labelText: 'Voucher / Remarks',
                   prefixIcon: Icon(Icons.comment),
@@ -450,13 +484,14 @@ class _EditExpenseDialogState extends ConsumerState<EditExpenseDialog> {
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ),
-                            IconButton(
-                              icon: const Icon(Icons.delete, color: Colors.red, size: 20),
-                              onPressed: () => setState(() {
-                                _newVoucherFile = null;
-                                _newVoucherBytes = null;
-                              }),
-                            ),
+                            if (!isApproved)
+                              IconButton(
+                                icon: const Icon(Icons.delete, color: Colors.red, size: 20),
+                                onPressed: () => setState(() {
+                                  _newVoucherFile = null;
+                                  _newVoucherBytes = null;
+                                }),
+                              ),
                           ],
                         ),
                       ] else if (!_removeVoucher && _currentVoucherUrl != null && _currentVoucherUrl!.isNotEmpty) ...[
@@ -489,11 +524,12 @@ class _EditExpenseDialogState extends ConsumerState<EditExpenseDialog> {
                               onPressed: () => _showImageZoom(_currentVoucherUrl!),
                               tooltip: 'View Bill',
                             ),
-                            IconButton(
-                              icon: const Icon(Icons.delete, color: Colors.red, size: 20),
-                              onPressed: () => setState(() => _removeVoucher = true),
-                              tooltip: 'Remove Bill',
-                            ),
+                            if (!isApproved)
+                              IconButton(
+                                icon: const Icon(Icons.delete, color: Colors.red, size: 20),
+                                onPressed: () => setState(() => _removeVoucher = true),
+                                tooltip: 'Remove Bill',
+                              ),
                           ],
                         ),
                       ] else ...[
@@ -502,28 +538,30 @@ class _EditExpenseDialogState extends ConsumerState<EditExpenseDialog> {
                           style: TextStyle(fontSize: 11, color: Colors.black54),
                         ),
                       ],
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: OutlinedButton.icon(
-                              onPressed: () => _pickVoucherImage(ImageSource.camera),
-                              icon: const Icon(Icons.camera_alt, size: 16),
-                              label: Text(_currentVoucherUrl != null || _newVoucherBytes != null ? 'Change (Camera)' : 'Camera'),
-                              style: OutlinedButton.styleFrom(backgroundColor: Colors.white),
+                      if (!isApproved) ...[
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: OutlinedButton.icon(
+                                onPressed: () => _pickVoucherImage(ImageSource.camera),
+                                icon: const Icon(Icons.camera_alt, size: 16),
+                                label: Text(_currentVoucherUrl != null || _newVoucherBytes != null ? 'Change (Camera)' : 'Camera'),
+                                style: OutlinedButton.styleFrom(backgroundColor: Colors.white),
+                              ),
                             ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: OutlinedButton.icon(
-                              onPressed: () => _pickVoucherImage(ImageSource.gallery),
-                              icon: const Icon(Icons.photo, size: 16),
-                              label: Text(_currentVoucherUrl != null || _newVoucherBytes != null ? 'Change (Gallery)' : 'Gallery'),
-                              style: OutlinedButton.styleFrom(backgroundColor: Colors.white),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: OutlinedButton.icon(
+                                onPressed: () => _pickVoucherImage(ImageSource.gallery),
+                                icon: const Icon(Icons.photo, size: 16),
+                                label: Text(_currentVoucherUrl != null || _newVoucherBytes != null ? 'Change (Gallery)' : 'Gallery'),
+                                style: OutlinedButton.styleFrom(backgroundColor: Colors.white),
+                              ),
                             ),
-                          ),
-                        ],
-                      ),
+                          ],
+                        ),
+                      ],
                     ],
                   ),
                 ),
@@ -533,14 +571,7 @@ class _EditExpenseDialogState extends ConsumerState<EditExpenseDialog> {
         ),
       ),
       actions: [
-        if (widget.expense.isApproved)
-          const Expanded(
-            child: Text(
-              'Approved transactions cannot be deleted.',
-              style: TextStyle(fontSize: 12, color: Colors.grey, fontStyle: FontStyle.italic),
-            ),
-          )
-        else if (canDelete)
+        if (!isApproved && canDelete)
           TextButton.icon(
             style: TextButton.styleFrom(foregroundColor: Colors.red),
             onPressed: _isSaving ? null : _delete,
@@ -549,9 +580,9 @@ class _EditExpenseDialogState extends ConsumerState<EditExpenseDialog> {
           ),
         TextButton(
           onPressed: _isSaving ? null : () => Navigator.of(context).pop(),
-          child: const Text('Cancel'),
+          child: Text(isApproved ? 'Close' : 'Cancel'),
         ),
-        if (!widget.expense.isApproved)
+        if (!isApproved)
           ElevatedButton.icon(
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.redAccent,
