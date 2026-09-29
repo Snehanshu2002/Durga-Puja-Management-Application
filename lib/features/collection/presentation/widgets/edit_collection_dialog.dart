@@ -150,16 +150,6 @@ class _EditCollectionDialogState extends ConsumerState<EditCollectionDialog> {
       return;
     }
 
-    if (widget.collection.isApproved) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Approved transactions cannot be modified directly. Accounting history must be preserved.'),
-          backgroundColor: Colors.orange,
-        ),
-      );
-      return;
-    }
-
     if (!_formKey.currentState!.validate()) return;
 
     final parsedAmount = int.tryParse(_amountController.text.trim());
@@ -319,12 +309,38 @@ class _EditCollectionDialogState extends ConsumerState<EditCollectionDialog> {
     return AlertDialog(
       title: Row(
         children: [
-          Icon(
-            isApproved ? Icons.receipt_long : Icons.edit_note,
-            color: isApproved ? Colors.green : AppColors.primary,
-          ),
+          const Icon(Icons.edit_note, color: AppColors.primary),
           const SizedBox(width: 8),
-          Text(isApproved ? 'View Collection Entry' : 'Edit Collection Entry'),
+          const Expanded(
+            child: Text(
+              'Edit Collection Entry',
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          if (isApproved)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              decoration: BoxDecoration(
+                color: Colors.green.shade50,
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(color: Colors.green.shade300),
+              ),
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.verified, size: 14, color: Colors.green),
+                  SizedBox(width: 4),
+                  Text(
+                    'Approved',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.green,
+                    ),
+                  ),
+                ],
+              ),
+            ),
         ],
       ),
       content: SingleChildScrollView(
@@ -336,23 +352,22 @@ class _EditCollectionDialogState extends ConsumerState<EditCollectionDialog> {
               if (isApproved)
                 Container(
                   margin: const EdgeInsets.only(bottom: 16),
-                  padding: const EdgeInsets.all(12),
+                  padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: Colors.green.shade50,
+                    color: Colors.blue.shade50,
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.green.shade200),
+                    border: Border.all(color: Colors.blue.shade200),
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.verified, color: Colors.green, size: 20),
+                      const Icon(Icons.info_outline, color: Colors.blue, size: 18),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          'This transaction is Approved & verified. Records cannot be modified or deleted.',
+                          'This transaction is Approved. Saving changes will update details directly.',
                           style: TextStyle(
                             fontSize: 12,
-                            color: Colors.green.shade900,
-                            fontWeight: FontWeight.w500,
+                            color: Colors.blue.shade900,
                           ),
                         ),
                       ),
@@ -362,7 +377,7 @@ class _EditCollectionDialogState extends ConsumerState<EditCollectionDialog> {
               else if (widget.collection.isCustodyLinked)
                 Container(
                   margin: const EdgeInsets.only(bottom: 16),
-                  padding: const EdgeInsets.all(12),
+                  padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
                     color: Colors.orange.shade50,
                     borderRadius: BorderRadius.circular(8),
@@ -370,7 +385,7 @@ class _EditCollectionDialogState extends ConsumerState<EditCollectionDialog> {
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.lock_outline, color: Colors.orange, size: 20),
+                      const Icon(Icons.lock_outline, color: Colors.orange, size: 18),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
@@ -378,7 +393,6 @@ class _EditCollectionDialogState extends ConsumerState<EditCollectionDialog> {
                           style: TextStyle(
                             fontSize: 12,
                             color: Colors.orange.shade900,
-                            fontWeight: FontWeight.w500,
                           ),
                         ),
                       ),
@@ -387,7 +401,6 @@ class _EditCollectionDialogState extends ConsumerState<EditCollectionDialog> {
                 ),
               TextFormField(
                 controller: _donorNameController,
-                readOnly: isApproved,
                 decoration: const InputDecoration(
                   labelText: 'Donor Name *',
                   prefixIcon: Icon(Icons.person),
@@ -398,7 +411,6 @@ class _EditCollectionDialogState extends ConsumerState<EditCollectionDialog> {
               const SizedBox(height: 12),
               TextFormField(
                 controller: _amountController,
-                readOnly: isApproved,
                 keyboardType: TextInputType.number,
                 decoration: const InputDecoration(
                   labelText: 'Amount (₹) *',
@@ -414,7 +426,6 @@ class _EditCollectionDialogState extends ConsumerState<EditCollectionDialog> {
               const SizedBox(height: 12),
               TextFormField(
                 controller: _mobileController,
-                readOnly: isApproved,
                 keyboardType: TextInputType.phone,
                 decoration: const InputDecoration(
                   labelText: 'Mobile Number',
@@ -424,7 +435,6 @@ class _EditCollectionDialogState extends ConsumerState<EditCollectionDialog> {
               const SizedBox(height: 12),
               TextFormField(
                 controller: _purposeController,
-                readOnly: isApproved,
                 decoration: const InputDecoration(
                   labelText: 'Purpose / Title *',
                   prefixIcon: Icon(Icons.label),
@@ -435,7 +445,6 @@ class _EditCollectionDialogState extends ConsumerState<EditCollectionDialog> {
               const SizedBox(height: 12),
               TextFormField(
                 controller: _remarkController,
-                readOnly: isApproved,
                 decoration: const InputDecoration(
                   labelText: 'Remark / Notes',
                   prefixIcon: Icon(Icons.comment),
@@ -454,13 +463,11 @@ class _EditCollectionDialogState extends ConsumerState<EditCollectionDialog> {
                     child: Text(mode.label),
                   );
                 }).toList(),
-                onChanged: isApproved
-                    ? null
-                    : (val) {
-                        if (val != null) {
-                          setState(() => _selectedPaymentMode = val);
-                        }
-                      },
+                onChanged: (val) {
+                  if (val != null) {
+                    setState(() => _selectedPaymentMode = val);
+                  }
+                },
               ),
               const SizedBox(height: 16),
 
@@ -481,7 +488,7 @@ class _EditCollectionDialogState extends ConsumerState<EditCollectionDialog> {
                           Icon(Icons.photo_library, size: 18, color: Colors.blue),
                           SizedBox(width: 8),
                           Text(
-                            'Receipt Screenshot / Photo',
+                            'Receipt Screenshot / Photo Proof',
                             style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.blue),
                           ),
                         ],
@@ -506,14 +513,13 @@ class _EditCollectionDialogState extends ConsumerState<EditCollectionDialog> {
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ),
-                            if (!isApproved)
-                              IconButton(
-                                icon: const Icon(Icons.delete, color: Colors.red, size: 20),
-                                onPressed: () => setState(() {
-                                  _newImageFile = null;
-                                  _newImageBytes = null;
-                                }),
-                              ),
+                            IconButton(
+                              icon: const Icon(Icons.delete, color: Colors.red, size: 20),
+                              onPressed: () => setState(() {
+                                _newImageFile = null;
+                                _newImageBytes = null;
+                              }),
+                            ),
                           ],
                         ),
                       ] else if (!_removePhoto && _currentPhotoUrl != null && _currentPhotoUrl!.isNotEmpty) ...[
@@ -546,12 +552,11 @@ class _EditCollectionDialogState extends ConsumerState<EditCollectionDialog> {
                               onPressed: () => _showImageZoom(_currentPhotoUrl!),
                               tooltip: 'View Photo',
                             ),
-                            if (!isApproved)
-                              IconButton(
-                                icon: const Icon(Icons.delete, color: Colors.red, size: 20),
-                                onPressed: () => setState(() => _removePhoto = true),
-                                tooltip: 'Remove Photo',
-                              ),
+                            IconButton(
+                              icon: const Icon(Icons.delete, color: Colors.red, size: 20),
+                              onPressed: () => setState(() => _removePhoto = true),
+                              tooltip: 'Remove Photo',
+                            ),
                           ],
                         ),
                       ] else ...[
@@ -560,30 +565,28 @@ class _EditCollectionDialogState extends ConsumerState<EditCollectionDialog> {
                           style: TextStyle(fontSize: 11, color: Colors.black54),
                         ),
                       ],
-                      if (!isApproved) ...[
-                        const SizedBox(height: 8),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: OutlinedButton.icon(
-                                onPressed: () => _pickImage(ImageSource.camera),
-                                icon: const Icon(Icons.camera_alt, size: 16),
-                                label: Text(_currentPhotoUrl != null || _newImageBytes != null ? 'Change (Camera)' : 'Camera'),
-                                style: OutlinedButton.styleFrom(backgroundColor: Colors.white),
-                              ),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: OutlinedButton.icon(
+                              onPressed: () => _pickImage(ImageSource.camera),
+                              icon: const Icon(Icons.camera_alt, size: 16),
+                              label: Text(_currentPhotoUrl != null || _newImageBytes != null ? 'Change (Camera)' : 'Camera'),
+                              style: OutlinedButton.styleFrom(backgroundColor: Colors.white),
                             ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: OutlinedButton.icon(
-                                onPressed: () => _pickImage(ImageSource.gallery),
-                                icon: const Icon(Icons.photo, size: 16),
-                                label: Text(_currentPhotoUrl != null || _newImageBytes != null ? 'Change (Gallery)' : 'Gallery'),
-                                style: OutlinedButton.styleFrom(backgroundColor: Colors.white),
-                              ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: OutlinedButton.icon(
+                              onPressed: () => _pickImage(ImageSource.gallery),
+                              icon: const Icon(Icons.photo, size: 16),
+                              label: Text(_currentPhotoUrl != null || _newImageBytes != null ? 'Change (Gallery)' : 'Gallery'),
+                              style: OutlinedButton.styleFrom(backgroundColor: Colors.white),
                             ),
-                          ],
-                        ),
-                      ],
+                          ),
+                        ],
+                      ),
                     ],
                   ),
                 ),
@@ -593,7 +596,7 @@ class _EditCollectionDialogState extends ConsumerState<EditCollectionDialog> {
         ),
       ),
       actions: [
-        if (!isApproved && canDelete)
+        if (canDelete)
           TextButton.icon(
             style: TextButton.styleFrom(foregroundColor: Colors.red),
             onPressed: _isSaving ? null : _delete,
@@ -602,24 +605,23 @@ class _EditCollectionDialogState extends ConsumerState<EditCollectionDialog> {
           ),
         TextButton(
           onPressed: _isSaving ? null : () => Navigator.of(context).pop(),
-          child: Text(isApproved ? 'Close' : 'Cancel'),
+          child: const Text('Cancel'),
         ),
-        if (!isApproved)
-          ElevatedButton.icon(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              foregroundColor: Colors.white,
-            ),
-            onPressed: _isSaving ? null : _submit,
-            icon: _isSaving
-                ? const SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                  )
-                : const Icon(Icons.save, size: 18),
-            label: Text(_isSaving ? 'Saving...' : 'Save Changes'),
+        ElevatedButton.icon(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppColors.primary,
+            foregroundColor: Colors.white,
           ),
+          onPressed: _isSaving ? null : _submit,
+          icon: _isSaving
+              ? const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                )
+              : const Icon(Icons.save, size: 18),
+          label: Text(_isSaving ? 'Saving...' : 'Save Changes'),
+        ),
       ],
     );
   }
