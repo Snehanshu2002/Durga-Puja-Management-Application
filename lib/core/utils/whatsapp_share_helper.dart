@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:durgapuja_manager/core/providers/whatsapp_settings_provider.dart';
 import 'package:durgapuja_manager/core/theme/app_colors.dart';
 
 class WhatsAppShareHelper {
@@ -17,6 +19,17 @@ class WhatsAppShareHelper {
     return digits;
   }
 
+  /// Get the currently saved WhatsApp language from local preferences
+  static Future<WhatsAppMessageLanguage> getSavedLanguage() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final code = prefs.getString('whatsapp_message_language');
+      return WhatsAppMessageLanguage.fromCode(code);
+    } catch (_) {
+      return WhatsAppMessageLanguage.odia;
+    }
+  }
+
   /// Template A: Chanda Due / Pledge Reminder
   static String formatChandaDueReminder({
     required String orgName,
@@ -26,12 +39,14 @@ class WhatsAppShareHelper {
     required int targetAmount,
     required int paidAmount,
     required int remainingAmount,
+    WhatsAppMessageLanguage language = WhatsAppMessageLanguage.odia,
   }) {
     // Remove "Pradhan" from member name in greeting as requested
     final cleanedName = memberName.replaceAll(RegExp(r'\s*\bpradhan\b', caseSensitive: false), '').trim();
     final nameToUse = cleanedName.isNotEmpty ? cleanedName : memberName;
 
-    return '''
+    if (language == WhatsAppMessageLanguage.english) {
+      return '''
 🙏 Jay Maa Durga Devi 🙏
 
 Namaskar $nameToUse bhai,
@@ -41,7 +56,23 @@ Target: ₹$targetAmount
 Paid: ₹$paidAmount
 Pending: ₹$remainingAmount
 
+Please clear your pending chanda at your earliest convenience.
 Dhanyawad 🙏'''.trim();
+    }
+
+    // Default Odia format
+    return '''
+🙏 ଜୟ ମା ଦୁର୍ଗା 🙏
+
+ନମସ୍କାର $nameToUse ଭାଇ,
+
+ଦୁର୍ଗା ପୂଜା ଚାନ୍ଦା ବିବରଣୀ:
+ଧାର୍ଯ୍ୟ ଚାନ୍ଦା (Target): ₹$targetAmount
+ପୈଠ ରାଶି (Paid): ₹$paidAmount
+ବାକି ରାଶି (Pending): ₹$remainingAmount
+
+ଦୟାକରି ଆପଣଙ୍କର ବକେୟା ଚାନ୍ଦା ପୈଠ କରି ସହଯୋଗ କରନ୍ତୁ।
+ଧନ୍ୟବାଦ 🙏'''.trim();
   }
 
   /// Template B: Approved Collection Receipt Acknowledgement
@@ -55,9 +86,12 @@ Dhanyawad 🙏'''.trim();
     required String receiptNumber,
     required DateTime date,
     required String collectedBy,
+    WhatsAppMessageLanguage language = WhatsAppMessageLanguage.odia,
   }) {
     final formattedDate = DateFormat('dd MMM yyyy, hh:mm a').format(date);
-    return '''
+
+    if (language == WhatsAppMessageLanguage.english) {
+      return '''
 🙏 Jay Maa Durga Devi 🙏
 
 Donation Receipt Acknowledgement
@@ -72,6 +106,24 @@ Date: $formattedDate
 Collected By: $collectedBy
 
 Jay Maa Durga! 🙏'''.trim();
+    }
+
+    // Default Odia format
+    return '''
+🙏 ଜୟ ମା ଦୁର୍ଗା 🙏
+
+ଦୁର୍ଗା ପୂଜା ଚାନ୍ଦା ରସିଦ (Donation Receipt)
+ସମିତି: $orgName
+ଉତ୍ସବ: $eventName ($eventYear)
+ରସିଦ ନଂ: $receiptNumber
+ଦାତାଙ୍କ ନାମ: $donorName
+ଚାନ୍ଦା ପରିମାଣ: ₹$amount
+ପେମେଣ୍ଟ ମୋଡ୍: $paymentMode
+ସ୍ଥିତି: ଅନୁମୋଦିତ (Approved ✅)
+ତାରିଖ: $formattedDate
+ଆଦାୟକାରୀ: $collectedBy
+
+ମା ଦୁର୍ଗା ଆପଣଙ୍କ ଓ ଆପଣଙ୍କ ପରିବାରର ମଙ୍ଗଳ କରନ୍ତୁ! 🙏'''.trim();
   }
 
   /// 1-Tap WhatsApp Share with graceful fallback to system share / clipboard
@@ -150,7 +202,9 @@ Jay Maa Durga! 🙏'''.trim();
     required String eventName,
     String committeeName = 'Durga Puja Committee',
     String? receiptNumber,
+    WhatsAppMessageLanguage? language,
   }) async {
+    final effectiveLang = language ?? await getSavedLanguage();
     final effectiveReceiptNo = receiptNumber ??
         'DP-${collection.date.year}-${collection.id.hashCode.abs().toString().padLeft(6, '0')}';
     final msg = formatCollectionReceipt(
@@ -163,6 +217,7 @@ Jay Maa Durga! 🙏'''.trim();
       receiptNumber: effectiveReceiptNo,
       date: collection.date,
       collectedBy: collection.collectedBy,
+      language: effectiveLang,
     );
 
     final cleanPhone = cleanPhoneNumber(collection.mobileNumber);

@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:printing/printing.dart';
+import 'package:durgapuja_manager/core/providers/whatsapp_settings_provider.dart';
 import 'package:durgapuja_manager/core/utils/whatsapp_share_helper.dart';
 import 'package:durgapuja_manager/features/collection/domain/entities/collection_entity.dart';
 import '../../domain/services/receipt_pdf_service.dart';
 
-class DonationReceiptPreviewScreen extends StatelessWidget {
+class DonationReceiptPreviewScreen extends ConsumerWidget {
   final CollectionEntity collection;
   final String eventName;
   final String committeeName;
@@ -21,7 +23,9 @@ class DonationReceiptPreviewScreen extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final waLang = ref.watch(whatsAppSettingsProvider);
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Donation Receipt Preview'),
@@ -31,10 +35,12 @@ class DonationReceiptPreviewScreen extends StatelessWidget {
             tooltip: 'Share on WhatsApp / Email',
             onPressed: () async {
               await WhatsAppShareHelper.shareReceiptToWhatsApp(
+                context: context,
                 collection: collection,
                 eventName: eventName,
                 committeeName: committeeName,
                 receiptNumber: receiptNumber,
+                language: waLang,
               );
             },
           ),

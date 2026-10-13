@@ -252,5 +252,13 @@ service cloud.firestore {
       allow read, write: if isAuthenticated();
       allow delete: if isAuthenticated();
     }
+
+    // ----------------------------------------------------
+    // APP & COMMITTEE SETTINGS COLLECTION
+    // ----------------------------------------------------
+    match /settings/{settingId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && isActiveUser() && (isSuperAdmin() || isPresident() || isTreasurer() || !userDocExists());
+    }
   }
 }

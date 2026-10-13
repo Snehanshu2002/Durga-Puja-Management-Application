@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:durgapuja_manager/core/theme/app_colors.dart';
 import 'package:durgapuja_manager/core/utils/money_formatter.dart';
 import 'package:durgapuja_manager/core/utils/phone_launcher.dart';
+import 'package:durgapuja_manager/core/providers/whatsapp_settings_provider.dart';
 import 'package:durgapuja_manager/core/utils/whatsapp_share_helper.dart';
 import 'package:durgapuja_manager/core/widgets/status_chip.dart';
 import 'package:durgapuja_manager/features/audit/domain/entities/audit_log.dart';
@@ -892,6 +893,7 @@ class _ChandaDashboardScreenState extends ConsumerState<ChandaDashboardScreen> {
                     ),
                     tooltip: 'WhatsApp Reminder to ${item.target.personName}',
                     onPressed: () {
+                      final waLang = ref.read(whatsAppSettingsProvider);
                       final msg = WhatsAppShareHelper.formatChandaDueReminder(
                         orgName: 'Durga Puja Committee',
                         eventName: eventName,
@@ -900,6 +902,7 @@ class _ChandaDashboardScreenState extends ConsumerState<ChandaDashboardScreen> {
                         targetAmount: item.targetAmount,
                         paidAmount: item.paidAmount,
                         remainingAmount: item.remainingAmount,
+                        language: waLang,
                       );
 
                       WhatsAppShareHelper.shareToWhatsApp(

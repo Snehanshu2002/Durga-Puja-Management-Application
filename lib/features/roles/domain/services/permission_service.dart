@@ -39,6 +39,7 @@ class PermissionService {
       Permission.managePujaEvents,
       Permission.manageCategories,
       Permission.viewAuditLogs,
+      Permission.manageSettings,
     },
     AppRole.treasurer: {
       Permission.viewDashboard,
@@ -53,6 +54,7 @@ class PermissionService {
       Permission.viewReports,
       Permission.exportReports,
       Permission.viewAuditLogs,
+      Permission.manageSettings,
     },
     AppRole.manager: {
       Permission.viewDashboard,

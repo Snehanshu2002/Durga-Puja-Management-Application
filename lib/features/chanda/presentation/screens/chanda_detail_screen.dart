@@ -5,6 +5,7 @@ import 'package:printing/printing.dart';
 import 'package:durgapuja_manager/core/theme/app_colors.dart';
 import 'package:durgapuja_manager/core/utils/money_formatter.dart';
 import 'package:durgapuja_manager/core/utils/phone_launcher.dart';
+import 'package:durgapuja_manager/core/providers/whatsapp_settings_provider.dart';
 import 'package:durgapuja_manager/core/utils/whatsapp_share_helper.dart';
 import 'package:durgapuja_manager/core/widgets/status_chip.dart';
 import 'package:durgapuja_manager/features/audit/domain/entities/audit_log.dart';
@@ -61,6 +62,7 @@ class ChandaDetailScreen extends ConsumerWidget {
     final effectiveRole = ref.watch(effectiveRoleProvider);
     final currentUser = ref.watch(currentUserProvider).value;
     final permissionService = PermissionService();
+    final waLang = ref.watch(whatsAppSettingsProvider);
 
     final foundList = list.where((element) => element.target.id == targetId).toList();
     if (foundList.isEmpty) {
@@ -227,6 +229,7 @@ class ChandaDetailScreen extends ConsumerWidget {
                               targetAmount: item.targetAmount,
                               paidAmount: item.paidAmount,
                               remainingAmount: item.remainingAmount,
+                              language: waLang,
                             );
 
                             WhatsAppShareHelper.shareToWhatsApp(
@@ -472,6 +475,7 @@ class ChandaDetailScreen extends ConsumerWidget {
     final receiptNo = 'DP-${c.date.year}-${c.id.hashCode.abs().toString().padLeft(6, '0')}';
     final displayName = memberName.isNotEmpty ? memberName : c.donorName;
     final displayMobile = (memberMobile != null && memberMobile.isNotEmpty) ? memberMobile : c.mobileNumber;
+    final waLang = ref.watch(whatsAppSettingsProvider);
     final receiptCollection = c.copyWith(
       donorName: displayName,
       mobileNumber: displayMobile,
@@ -578,6 +582,7 @@ class ChandaDetailScreen extends ConsumerWidget {
                         receiptNumber: receiptNo,
                         date: c.date,
                         collectedBy: c.collectedBy,
+                        language: waLang,
                       );
 
                       WhatsAppShareHelper.shareToWhatsApp(
