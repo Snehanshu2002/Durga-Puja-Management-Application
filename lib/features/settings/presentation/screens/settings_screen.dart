@@ -270,6 +270,7 @@ class SettingsScreen extends ConsumerWidget {
               language: selectedLang,
               includePaymentQr: includeQr,
               upiId: currentConfig.upiId,
+              paymentPhone: currentConfig.paymentPhone,
               payeeName: currentConfig.payeeName,
               qrImageUrl: currentConfig.qrImageUrl,
               customScreenshotNote: currentConfig.customNote,
@@ -473,6 +474,11 @@ class SettingsScreen extends ConsumerWidget {
                                         ],
                                       ),
                                       const SizedBox(height: 4),
+                                      Text(
+                                        '📱 Mobile No: ${currentConfig.paymentPhone} (PhonePe/GPay)',
+                                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF128C7E)),
+                                      ),
+                                      const SizedBox(height: 2),
                                       Text(
                                         'UPI ID: ${currentConfig.upiId}',
                                         style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),

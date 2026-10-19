@@ -23,6 +23,7 @@ class WhatsAppConfig {
   final WhatsAppMessageLanguage language;
   final bool includePaymentQr;
   final String upiId;
+  final String paymentPhone;
   final String payeeName;
   final String qrImageUrl;
   final String? customNote;
@@ -31,6 +32,7 @@ class WhatsAppConfig {
     this.language = WhatsAppMessageLanguage.odia,
     this.includePaymentQr = true,
     this.upiId = '7735382544-7@axl',
+    this.paymentPhone = '7735382544',
     this.payeeName = 'SNEHANSHU SEKHAR SAHOO',
     this.qrImageUrl = 'https://durga-puja-manager.web.app/payment_qr.jpg',
     this.customNote,
@@ -40,6 +42,7 @@ class WhatsAppConfig {
     WhatsAppMessageLanguage? language,
     bool? includePaymentQr,
     String? upiId,
+    String? paymentPhone,
     String? payeeName,
     String? qrImageUrl,
     String? customNote,
@@ -48,6 +51,7 @@ class WhatsAppConfig {
       language: language ?? this.language,
       includePaymentQr: includePaymentQr ?? this.includePaymentQr,
       upiId: upiId ?? this.upiId,
+      paymentPhone: paymentPhone ?? this.paymentPhone,
       payeeName: payeeName ?? this.payeeName,
       qrImageUrl: qrImageUrl ?? this.qrImageUrl,
       customNote: customNote ?? this.customNote,
@@ -59,6 +63,7 @@ class WhatsAppConfig {
       'language': language.code,
       'includePaymentQr': includePaymentQr,
       'upiId': upiId,
+      'paymentPhone': paymentPhone,
       'payeeName': payeeName,
       'qrImageUrl': qrImageUrl,
       if (customNote != null) 'customNote': customNote,
@@ -70,6 +75,7 @@ class WhatsAppConfig {
       language: WhatsAppMessageLanguage.fromCode(map['language'] as String?),
       includePaymentQr: map['includePaymentQr'] as bool? ?? true,
       upiId: map['upiId'] as String? ?? '7735382544-7@axl',
+      paymentPhone: map['paymentPhone'] as String? ?? '7735382544',
       payeeName: map['payeeName'] as String? ?? 'SNEHANSHU SEKHAR SAHOO',
       qrImageUrl: map['qrImageUrl'] as String? ?? 'https://durga-puja-manager.web.app/payment_qr.jpg',
       customNote: map['customNote'] as String?,
@@ -80,6 +86,7 @@ class WhatsAppConfig {
 const String _kWhatsAppLangPrefKey = 'whatsapp_message_language';
 const String _kIncludePaymentQrPrefKey = 'whatsapp_include_payment_qr';
 const String _kUpiIdPrefKey = 'whatsapp_upi_id';
+const String _kPaymentPhonePrefKey = 'whatsapp_payment_phone';
 const String _kPayeeNamePrefKey = 'whatsapp_payee_name';
 const String _kQrImageUrlPrefKey = 'whatsapp_qr_image_url';
 const String _kCustomNotePrefKey = 'whatsapp_custom_note';
@@ -100,6 +107,7 @@ class WhatsAppSettingsNotifier extends StateNotifier<WhatsAppConfig> {
       final savedCode = prefs.getString(_kWhatsAppLangPrefKey);
       final savedIncludeQr = prefs.getBool(_kIncludePaymentQrPrefKey);
       final savedUpiId = prefs.getString(_kUpiIdPrefKey);
+      final savedPhone = prefs.getString(_kPaymentPhonePrefKey);
       final savedPayee = prefs.getString(_kPayeeNamePrefKey);
       final savedQrUrl = prefs.getString(_kQrImageUrlPrefKey);
       final savedNote = prefs.getString(_kCustomNotePrefKey);
@@ -108,6 +116,7 @@ class WhatsAppSettingsNotifier extends StateNotifier<WhatsAppConfig> {
         language: savedCode != null ? WhatsAppMessageLanguage.fromCode(savedCode) : null,
         includePaymentQr: savedIncludeQr,
         upiId: savedUpiId,
+        paymentPhone: savedPhone,
         payeeName: savedPayee,
         qrImageUrl: savedQrUrl,
         customNote: savedNote,
@@ -129,6 +138,7 @@ class WhatsAppSettingsNotifier extends StateNotifier<WhatsAppConfig> {
             prefs.setString(_kWhatsAppLangPrefKey, parsed.language.code);
             prefs.setBool(_kIncludePaymentQrPrefKey, parsed.includePaymentQr);
             prefs.setString(_kUpiIdPrefKey, parsed.upiId);
+            prefs.setString(_kPaymentPhonePrefKey, parsed.paymentPhone);
             prefs.setString(_kPayeeNamePrefKey, parsed.payeeName);
             prefs.setString(_kQrImageUrlPrefKey, parsed.qrImageUrl);
             if (parsed.customNote != null) {
@@ -148,6 +158,7 @@ class WhatsAppSettingsNotifier extends StateNotifier<WhatsAppConfig> {
     WhatsAppMessageLanguage? language,
     bool? includePaymentQr,
     String? upiId,
+    String? paymentPhone,
     String? payeeName,
     String? qrImageUrl,
     String? customNote,
@@ -157,6 +168,7 @@ class WhatsAppSettingsNotifier extends StateNotifier<WhatsAppConfig> {
       language: language,
       includePaymentQr: includePaymentQr,
       upiId: upiId,
+      paymentPhone: paymentPhone,
       payeeName: payeeName,
       qrImageUrl: qrImageUrl,
       customNote: customNote,
@@ -168,6 +180,7 @@ class WhatsAppSettingsNotifier extends StateNotifier<WhatsAppConfig> {
       await prefs.setString(_kWhatsAppLangPrefKey, updated.language.code);
       await prefs.setBool(_kIncludePaymentQrPrefKey, updated.includePaymentQr);
       await prefs.setString(_kUpiIdPrefKey, updated.upiId);
+      await prefs.setString(_kPaymentPhonePrefKey, updated.paymentPhone);
       await prefs.setString(_kPayeeNamePrefKey, updated.payeeName);
       await prefs.setString(_kQrImageUrlPrefKey, updated.qrImageUrl);
       if (updated.customNote != null) {

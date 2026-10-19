@@ -37,6 +37,7 @@ class WhatsAppShareHelper {
       final code = prefs.getString('whatsapp_message_language');
       final includeQr = prefs.getBool('whatsapp_include_payment_qr') ?? true;
       final upiId = prefs.getString('whatsapp_upi_id') ?? '7735382544-7@axl';
+      final phone = prefs.getString('whatsapp_payment_phone') ?? '7735382544';
       final payee = prefs.getString('whatsapp_payee_name') ?? 'SNEHANSHU SEKHAR SAHOO';
       final qrUrl = prefs.getString('whatsapp_qr_image_url') ?? 'https://durga-puja-manager.web.app/payment_qr.jpg';
       final note = prefs.getString('whatsapp_custom_note');
@@ -45,6 +46,7 @@ class WhatsAppShareHelper {
         language: WhatsAppMessageLanguage.fromCode(code),
         includePaymentQr: includeQr,
         upiId: upiId,
+        paymentPhone: phone,
         payeeName: payee,
         qrImageUrl: qrUrl,
         customNote: note,
@@ -54,7 +56,7 @@ class WhatsAppShareHelper {
     }
   }
 
-  /// Template A: Chanda Due / Pledge Reminder with optional QR Scanner and screenshot instructions
+  /// Template A: Chanda Due / Pledge Reminder with QR Scanner, Mobile Payment No, and screenshot instructions
   static String formatChandaDueReminder({
     required String orgName,
     required String eventName,
@@ -67,6 +69,7 @@ class WhatsAppShareHelper {
     WhatsAppConfig? config,
     bool? includePaymentQr,
     String? upiId,
+    String? paymentPhone,
     String? payeeName,
     String? qrImageUrl,
     String? customScreenshotNote,
@@ -75,6 +78,7 @@ class WhatsAppShareHelper {
     final effectiveLang = config?.language ?? language;
     final effectiveIncludeQr = includePaymentQr ?? config?.includePaymentQr ?? true;
     final effectiveUpiId = upiId ?? config?.upiId ?? '7735382544-7@axl';
+    final effectivePhone = paymentPhone ?? config?.paymentPhone ?? '7735382544';
     final effectivePayee = payeeName ?? config?.payeeName ?? 'SNEHANSHU SEKHAR SAHOO';
     final effectiveQrUrl = qrImageUrl ?? config?.qrImageUrl ?? 'https://durga-puja-manager.web.app/payment_qr.jpg';
     final effectiveNote = customScreenshotNote ?? config?.customNote;
@@ -97,9 +101,10 @@ class WhatsAppShareHelper {
 
       if (!isPaid && effectiveIncludeQr) {
         buffer.writeln();
-        buffer.writeln('📲 Scan & Pay using QR Code (PhonePe / GPay / Paytm):');
-        buffer.writeln('UPI ID: $effectiveUpiId ($effectivePayee)');
-        buffer.writeln('QR Scanner: $effectiveQrUrl');
+        buffer.writeln('📲 Scan & Pay via QR Code or Mobile Number:');
+        buffer.writeln('📱 PhonePe / GPay / Paytm No: $effectivePhone ($effectivePayee)');
+        buffer.writeln('UPI ID: $effectiveUpiId');
+        buffer.writeln('QR Scanner Link: $effectiveQrUrl');
         buffer.writeln();
         buffer.writeln('⚠️ Note:');
         buffer.writeln(effectiveNote ?? 'After payment, please send the payment screenshot on this number or committee WhatsApp group.');
@@ -128,9 +133,10 @@ class WhatsAppShareHelper {
 
     if (!isPaid && effectiveIncludeQr) {
       buffer.writeln();
-      buffer.writeln('📲 QR Code ସ୍କାନର୍ରେ Pay କରନ୍ତୁ (PhonePe / GPay / Paytm):');
-      buffer.writeln('UPI ID: $effectiveUpiId ($effectivePayee)');
-      buffer.writeln('QR Scanner Link: $effectiveQrUrl');
+      buffer.writeln('📲 QR Code କିମ୍ବା ମୋବାଇଲ୍ ନମ୍ବରରେ Pay କରନ୍ତୁ:');
+      buffer.writeln('📱 PhonePe / GPay / Paytm No: $effectivePhone ($effectivePayee)');
+      buffer.writeln('UPI ID: $effectiveUpiId');
+      buffer.writeln('🔗 QR Scanner Link: $effectiveQrUrl');
       buffer.writeln();
       buffer.writeln('⚠️ ସୂଚନା:');
       buffer.writeln(effectiveNote ?? 'ପେମେଣ୍ଟ କରିସାରିବା ପରେ Payment Screenshot ଏହି ନମ୍ବର କିମ୍ବା WhatsApp Group ରେ ନିଶ୍ଚୟ ପଠାନ୍ତୁ।');
@@ -194,7 +200,7 @@ Jay Maa Durga! 🙏'''.trim();
 ତାରିଖ: $formattedDate
 ଆଦାୟକାରୀ: $collectedBy
 
-ମା ଦୁର୍ଗା ଆପଣଙ୍କ ଓ ଆପଙ୍କ ପରିବାରର ମଙ୍ଗଳ କରନ୍ତୁ! 🙏'''.trim();
+ମା ଦୁର୍ଗା ଆପଣଙ୍କ ଓ ଆପଣଙ୍କ ପରିବାରର ମଙ୍ଗଳ କରନ୍ତୁ! 🙏'''.trim();
   }
 
   /// 1-Tap WhatsApp Share with graceful fallback to system share / clipboard
@@ -280,7 +286,7 @@ Jay Maa Durga! 🙏'''.trim();
         name: 'phonepe_durga_puja_qr.jpg',
       );
       final defaultCaption = caption ??
-          '🙏 ଜୟ ମା ଦୁର୍ଗା 🙏\nଦୁର୍ଗା ପୂଜା ଚାନ୍ଦା ପେମେଣ୍ଟ QR Scanner (PhonePe / GPay / Paytm)\nUPI ID: 7735382544-7@axl (SNEHANSHU SEKHAR SAHOO)\n⚠️ Payment କଲା ପରେ Screenshot ଏହି ନମ୍ବର କିମ୍ବା WhatsApp Group ରେ ନିଶ୍ଚୟ ପଠାନ୍ତୁ।';
+          '🙏 ଜୟ ମା ଦୁର୍ଗା 🙏\nଦୁର୍ଗା ପୂଜା ଚାନ୍ଦା ପେମେଣ୍ଟ QR Scanner & Details (PhonePe / GPay / Paytm)\n📱 Mobile No (PhonePe/GPay): 7735382544 (SNEHANSHU SEKHAR SAHOO)\nUPI ID: 7735382544-7@axl\n⚠️ Payment କଲା ପରେ Screenshot ଏହି ନମ୍ବର କିମ୍ବା WhatsApp Group ରେ ନିଶ୍ଚୟ ପଠାନ୍ତୁ।';
       await Share.shareXFiles([xfile], text: defaultCaption);
     } catch (e) {
       if (context.mounted) {
@@ -343,11 +349,22 @@ Jay Maa Durga! 🙏'''.trim();
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
+                          const Text('Mobile No (Pay):', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                          Text(
+                            '${cfg.paymentPhone} (PhonePe/GPay)',
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF128C7E)),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
                           const Text('UPI ID:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
                           Text(cfg.upiId, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12, color: Color(0xFF5f259f))),
                         ],
                       ),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 6),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
