@@ -893,7 +893,7 @@ class _ChandaDashboardScreenState extends ConsumerState<ChandaDashboardScreen> {
                     ),
                     tooltip: 'WhatsApp Reminder to ${item.target.personName}',
                     onPressed: () {
-                      final waLang = ref.read(whatsAppSettingsProvider);
+                      final waConfig = ref.read(whatsAppSettingsProvider);
                       final msg = WhatsAppShareHelper.formatChandaDueReminder(
                         orgName: 'Durga Puja Committee',
                         eventName: eventName,
@@ -902,7 +902,7 @@ class _ChandaDashboardScreenState extends ConsumerState<ChandaDashboardScreen> {
                         targetAmount: item.targetAmount,
                         paidAmount: item.paidAmount,
                         remainingAmount: item.remainingAmount,
-                        language: waLang,
+                        config: waConfig,
                       );
 
                       WhatsAppShareHelper.shareToWhatsApp(
@@ -921,6 +921,23 @@ class _ChandaDashboardScreenState extends ConsumerState<ChandaDashboardScreen> {
                       );
                     },
                     icon: const Icon(Icons.chat_bubble_outline_rounded, size: 16),
+                  ),
+                  const SizedBox(width: 4),
+
+                  // PhonePe Payment QR Scanner Button
+                  IconButton.filledTonal(
+                    style: IconButton.styleFrom(
+                      backgroundColor: const Color(0xFF5f259f).withValues(alpha: 0.12),
+                      foregroundColor: const Color(0xFF5f259f),
+                      visualDensity: VisualDensity.compact,
+                      padding: const EdgeInsets.all(6),
+                    ),
+                    tooltip: 'View & Share PhonePe QR Scanner',
+                    onPressed: () {
+                      final waConfig = ref.read(whatsAppSettingsProvider);
+                      WhatsAppShareHelper.showPaymentQrDialog(context, config: waConfig);
+                    },
+                    icon: const Icon(Icons.qr_code_scanner_rounded, size: 16),
                   ),
 
                   if (hasPhone) ...[

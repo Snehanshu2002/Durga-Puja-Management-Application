@@ -62,7 +62,7 @@ class ChandaDetailScreen extends ConsumerWidget {
     final effectiveRole = ref.watch(effectiveRoleProvider);
     final currentUser = ref.watch(currentUserProvider).value;
     final permissionService = PermissionService();
-    final waLang = ref.watch(whatsAppSettingsProvider);
+    final waConfig = ref.watch(whatsAppSettingsProvider);
 
     final foundList = list.where((element) => element.target.id == targetId).toList();
     if (foundList.isEmpty) {
@@ -229,7 +229,7 @@ class ChandaDetailScreen extends ConsumerWidget {
                               targetAmount: item.targetAmount,
                               paidAmount: item.paidAmount,
                               remainingAmount: item.remainingAmount,
-                              language: waLang,
+                              config: waConfig,
                             );
 
                             WhatsAppShareHelper.shareToWhatsApp(
@@ -250,6 +250,17 @@ class ChandaDetailScreen extends ConsumerWidget {
                           },
                           icon: const Icon(Icons.chat_bubble_outline_rounded, size: 16),
                           label: const Text('WhatsApp Reminder', style: TextStyle(fontSize: 12)),
+                        ),
+                        OutlinedButton.icon(
+                          style: OutlinedButton.styleFrom(
+                            visualDensity: VisualDensity.compact,
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                            side: const BorderSide(color: Color(0xFF5f259f)),
+                            foregroundColor: const Color(0xFF5f259f),
+                          ),
+                          onPressed: () => WhatsAppShareHelper.showPaymentQrDialog(context, config: waConfig),
+                          icon: const Icon(Icons.qr_code_scanner_rounded, size: 16),
+                          label: const Text('QR Scanner', style: TextStyle(fontSize: 12)),
                         ),
                         if (hasPhone)
                           OutlinedButton.icon(
@@ -475,7 +486,7 @@ class ChandaDetailScreen extends ConsumerWidget {
     final receiptNo = 'DP-${c.date.year}-${c.id.hashCode.abs().toString().padLeft(6, '0')}';
     final displayName = memberName.isNotEmpty ? memberName : c.donorName;
     final displayMobile = (memberMobile != null && memberMobile.isNotEmpty) ? memberMobile : c.mobileNumber;
-    final waLang = ref.watch(whatsAppSettingsProvider);
+    final waConfig = ref.watch(whatsAppSettingsProvider);
     final receiptCollection = c.copyWith(
       donorName: displayName,
       mobileNumber: displayMobile,
@@ -582,7 +593,7 @@ class ChandaDetailScreen extends ConsumerWidget {
                         receiptNumber: receiptNo,
                         date: c.date,
                         collectedBy: c.collectedBy,
-                        language: waLang,
+                        language: waConfig.language,
                       );
 
                       WhatsAppShareHelper.shareToWhatsApp(

@@ -24,7 +24,7 @@ class DonationReceiptPreviewScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final waLang = ref.watch(whatsAppSettingsProvider);
+    final waConfig = ref.watch(whatsAppSettingsProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -40,7 +40,7 @@ class DonationReceiptPreviewScreen extends ConsumerWidget {
                 eventName: eventName,
                 committeeName: committeeName,
                 receiptNumber: receiptNumber,
-                language: waLang,
+                language: waConfig.language,
               );
             },
           ),

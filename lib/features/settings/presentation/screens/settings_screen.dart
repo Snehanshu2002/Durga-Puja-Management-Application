@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:durgapuja_manager/core/constants/app_constants.dart';
 import 'package:durgapuja_manager/core/providers/whatsapp_settings_provider.dart';
+import 'package:durgapuja_manager/core/utils/whatsapp_share_helper.dart';
 import 'package:durgapuja_manager/core/theme/app_colors.dart';
 import 'package:durgapuja_manager/features/audit/presentation/screens/audit_log_screen.dart';
 import 'package:durgapuja_manager/features/auth/presentation/providers/auth_provider.dart';
@@ -26,7 +27,7 @@ class SettingsScreen extends ConsumerWidget {
         permissionService.hasPermission(user.role, Permission.manageUsers);
     final canManageSettings = user != null &&
         permissionService.hasPermission(user.role, Permission.manageSettings);
-    final currentLanguage = ref.watch(whatsAppSettingsProvider);
+    final waConfig = ref.watch(whatsAppSettingsProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -102,8 +103,8 @@ class SettingsScreen extends ConsumerWidget {
               ),
               child: const Icon(Icons.chat_bubble_outline_rounded, color: Color(0xFF128C7E), size: 20),
             ),
-            title: const Text('WhatsApp Message Format'),
-            subtitle: Text('Default: ${currentLanguage.displayName} (${currentLanguage == WhatsAppMessageLanguage.odia ? "ଓଡ଼ିଆ" : "English"})'),
+            title: const Text('WhatsApp Message & QR Scanner Format'),
+            subtitle: Text('Language: ${waConfig.language.displayName} • QR Scanner: ${waConfig.includePaymentQr ? "Enabled" : "Off"}'),
             trailing: Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
               decoration: BoxDecoration(
@@ -114,10 +115,10 @@ class SettingsScreen extends ConsumerWidget {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(currentLanguage.icon, style: const TextStyle(fontSize: 13)),
+                  Text(waConfig.language.icon, style: const TextStyle(fontSize: 13)),
                   const SizedBox(width: 4),
                   Text(
-                    currentLanguage == WhatsAppMessageLanguage.odia ? 'ଓଡ଼ିଆ' : 'English',
+                    waConfig.language == WhatsAppMessageLanguage.odia ? 'ଓଡ଼ିଆ' : 'English',
                     style: const TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 12,
@@ -132,7 +133,7 @@ class SettingsScreen extends ConsumerWidget {
             onTap: () => _showWhatsAppSettingsDialog(
               context,
               ref,
-              currentLanguage,
+              waConfig,
               canManageSettings,
               user?.name,
             ),
@@ -246,21 +247,38 @@ class SettingsScreen extends ConsumerWidget {
   void _showWhatsAppSettingsDialog(
     BuildContext context,
     WidgetRef ref,
-    WhatsAppMessageLanguage currentLanguage,
+    WhatsAppConfig currentConfig,
     bool canEdit,
     String? userName,
   ) {
-    WhatsAppMessageLanguage selectedLang = currentLanguage;
+    WhatsAppMessageLanguage selectedLang = currentConfig.language;
+    bool includeQr = currentConfig.includePaymentQr;
 
     showDialog(
       context: context,
       builder: (ctx) {
         return StatefulBuilder(
           builder: (dialogCtx, setDialogState) {
+            final previewMsg = WhatsAppShareHelper.formatChandaDueReminder(
+              orgName: 'Durga Puja Committee',
+              eventName: 'Durga Puja 2026',
+              eventYear: 2026,
+              memberName: 'ରାମ ସାହୁ (Ram Sahoo)',
+              targetAmount: 2000,
+              paidAmount: 1000,
+              remainingAmount: 1000,
+              language: selectedLang,
+              includePaymentQr: includeQr,
+              upiId: currentConfig.upiId,
+              payeeName: currentConfig.payeeName,
+              qrImageUrl: currentConfig.qrImageUrl,
+              customScreenshotNote: currentConfig.customNote,
+            );
+
             return AlertDialog(
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              titlePadding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
-              contentPadding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
+              titlePadding: const EdgeInsets.fromLTRB(20, 18, 20, 8),
+              contentPadding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
               title: Row(
                 children: [
                   Container(
@@ -281,11 +299,11 @@ class SettingsScreen extends ConsumerWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'WhatsApp Message Format',
-                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                          'WhatsApp & QR Scanner Format',
+                          style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
                         ),
                         Text(
-                          'Admin Configuration',
+                          'Admin Message & Payment Setup',
                           style: TextStyle(fontSize: 12, color: Colors.grey),
                         ),
                       ],
@@ -294,18 +312,12 @@ class SettingsScreen extends ConsumerWidget {
                 ],
               ),
               content: SizedBox(
-                width: 440,
+                width: 480,
                 child: SingleChildScrollView(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        'Select the default language used when sharing Chanda due reminders and donation receipts via WhatsApp:',
-                        style: TextStyle(fontSize: 13, color: AppColors.textSecondaryLight),
-                      ),
-                      const SizedBox(height: 16),
-
                       if (!canEdit) ...[
                         Container(
                           padding: const EdgeInsets.all(10),
@@ -321,7 +333,7 @@ class SettingsScreen extends ConsumerWidget {
                               SizedBox(width: 8),
                               Expanded(
                                 child: Text(
-                                  'Only Admin, President, or Treasurer can change the default WhatsApp format.',
+                                  'Only Admin, President, or Treasurer can change the WhatsApp & QR Scanner format.',
                                   style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
                                 ),
                               ),
@@ -330,196 +342,212 @@ class SettingsScreen extends ConsumerWidget {
                         ),
                       ],
 
-                      // Option 1: Odia (Default)
-                      InkWell(
-                        borderRadius: BorderRadius.circular(12),
-                        onTap: canEdit
-                            ? () {
-                                setDialogState(() {
-                                  selectedLang = WhatsAppMessageLanguage.odia;
-                                });
-                              }
-                            : null,
-                        child: Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: selectedLang == WhatsAppMessageLanguage.odia
-                                ? const Color(0xFF25D366).withValues(alpha: 0.08)
-                                : Colors.transparent,
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: selectedLang == WhatsAppMessageLanguage.odia
-                                  ? const Color(0xFF25D366)
-                                  : AppColors.divider,
-                              width: selectedLang == WhatsAppMessageLanguage.odia ? 2 : 1,
-                            ),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Container(
-                                    width: 22,
-                                    height: 22,
-                                    margin: const EdgeInsets.only(right: 8),
-                                    decoration: BoxDecoration(
-                                      shape: BoxShape.circle,
-                                      border: Border.all(
-                                        color: selectedLang == WhatsAppMessageLanguage.odia
-                                            ? const Color(0xFF128C7E)
-                                            : Colors.grey.shade400,
-                                        width: 2,
+                      // 1. Language Option: Odia (Default)
+                      const Text(
+                        '1. Message Language (ଭାଷା):',
+                        style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.textPrimaryLight),
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: InkWell(
+                              borderRadius: BorderRadius.circular(10),
+                              onTap: canEdit
+                                  ? () => setDialogState(() => selectedLang = WhatsAppMessageLanguage.odia)
+                                  : null,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                                decoration: BoxDecoration(
+                                  color: selectedLang == WhatsAppMessageLanguage.odia
+                                      ? const Color(0xFF25D366).withValues(alpha: 0.1)
+                                      : Colors.transparent,
+                                  borderRadius: BorderRadius.circular(10),
+                                  border: Border.all(
+                                    color: selectedLang == WhatsAppMessageLanguage.odia
+                                        ? const Color(0xFF25D366)
+                                        : AppColors.divider,
+                                    width: selectedLang == WhatsAppMessageLanguage.odia ? 2 : 1,
+                                  ),
+                                ),
+                                child: Row(
+                                  children: [
+                                    const Text('🌺', style: TextStyle(fontSize: 16)),
+                                    const SizedBox(width: 8),
+                                    const Expanded(
+                                      child: Text(
+                                        'ଓଡ଼ିଆ (Odia - Default)',
+                                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                                       ),
                                     ),
-                                    child: selectedLang == WhatsAppMessageLanguage.odia
-                                        ? Center(
-                                            child: Container(
-                                              width: 11,
-                                              height: 11,
-                                              decoration: const BoxDecoration(
-                                                shape: BoxShape.circle,
-                                                color: Color(0xFF128C7E),
-                                              ),
-                                            ),
-                                          )
-                                        : null,
-                                  ),
-                                  const SizedBox(width: 4),
-                                  const Text('🌺', style: TextStyle(fontSize: 18)),
-                                  const SizedBox(width: 8),
-                                  const Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          'ଓଡ଼ିଆ (Odia - Default)',
-                                          style: TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 15,
-                                          ),
-                                        ),
-                                        Text(
-                                          'Recommended for local devotees & committee members',
-                                          style: TextStyle(fontSize: 11, color: Colors.grey),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 8),
-                              Container(
-                                width: double.infinity,
-                                padding: const EdgeInsets.all(10),
-                                decoration: BoxDecoration(
-                                  color: Colors.grey.withValues(alpha: 0.08),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: const Text(
-                                  '🙏 ଜୟ ମା ଦୁର୍ଗା 🙏\nନମସ୍କାର ରାମ ଭାଇ,\nଦୁର୍ଗା ପୂଜା ଚାନ୍ଦା ବିବରଣୀ:\nଧାର୍ଯ୍ୟ: ₹2,000 | ପୈଠ: ₹1,000 | ବାକି: ₹1,000\nଦୟାକରି ସହଯୋଗ କରନ୍ତୁ। ଧନ୍ୟବାଦ 🙏',
-                                  style: TextStyle(fontSize: 11.5, height: 1.35, color: Colors.black87),
+                                    if (selectedLang == WhatsAppMessageLanguage.odia)
+                                      const Icon(Icons.check_circle, color: Color(0xFF128C7E), size: 18),
+                                  ],
                                 ),
                               ),
-                            ],
+                            ),
                           ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: InkWell(
+                              borderRadius: BorderRadius.circular(10),
+                              onTap: canEdit
+                                  ? () => setDialogState(() => selectedLang = WhatsAppMessageLanguage.english)
+                                  : null,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                                decoration: BoxDecoration(
+                                  color: selectedLang == WhatsAppMessageLanguage.english
+                                      ? const Color(0xFF25D366).withValues(alpha: 0.1)
+                                      : Colors.transparent,
+                                  borderRadius: BorderRadius.circular(10),
+                                  border: Border.all(
+                                    color: selectedLang == WhatsAppMessageLanguage.english
+                                        ? const Color(0xFF25D366)
+                                        : AppColors.divider,
+                                    width: selectedLang == WhatsAppMessageLanguage.english ? 2 : 1,
+                                  ),
+                                ),
+                                child: Row(
+                                  children: [
+                                    const Text('🌐', style: TextStyle(fontSize: 16)),
+                                    const SizedBox(width: 8),
+                                    const Expanded(
+                                      child: Text(
+                                        'English',
+                                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                                      ),
+                                    ),
+                                    if (selectedLang == WhatsAppMessageLanguage.english)
+                                      const Icon(Icons.check_circle, color: Color(0xFF128C7E), size: 18),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+
+                      // 2. PhonePe QR Scanner & Screenshot Instructions Section
+                      const Text(
+                        '2. PhonePe Payment QR Scanner & Screenshot Instruction:',
+                        style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.textPrimaryLight),
+                      ),
+                      const SizedBox(height: 8),
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF5f259f).withValues(alpha: 0.05),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: const Color(0xFF5f259f).withValues(alpha: 0.3)),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(8),
+                                  child: Image.asset(
+                                    'assets/images/payment_qr.jpg',
+                                    width: 70,
+                                    height: 100,
+                                    fit: BoxFit.cover,
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      const Row(
+                                        children: [
+                                          Icon(Icons.qr_code_scanner, color: Color(0xFF5f259f), size: 16),
+                                          SizedBox(width: 4),
+                                          Text(
+                                            'PhonePe Accepted Here',
+                                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF5f259f)),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        'UPI ID: ${currentConfig.upiId}',
+                                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                                      ),
+                                      Text(
+                                        'Payee: ${currentConfig.payeeName}',
+                                        style: const TextStyle(fontSize: 11.5, color: Colors.grey),
+                                      ),
+                                      const SizedBox(height: 8),
+                                      InkWell(
+                                        onTap: () => WhatsAppShareHelper.showPaymentQrDialog(context, config: currentConfig),
+                                        child: const Text(
+                                          '🔍 View / Share Full QR Image',
+                                          style: TextStyle(fontSize: 11.5, color: Color(0xFF128C7E), fontWeight: FontWeight.bold),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const Divider(height: 20),
+                            SwitchListTile(
+                              dense: true,
+                              contentPadding: EdgeInsets.zero,
+                              activeTrackColor: const Color(0xFF25D366),
+                              title: const Text(
+                                'Include QR Scanner & Screenshot Instruction in Reminder',
+                                style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600),
+                              ),
+                              subtitle: const Text(
+                                'Adds QR image link, UPI ID, and screenshot note to message',
+                                style: TextStyle(fontSize: 11, color: Colors.grey),
+                              ),
+                              value: includeQr,
+                              onChanged: canEdit
+                                  ? (val) => setDialogState(() => includeQr = val)
+                                  : null,
+                            ),
+                            Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: Colors.amber.withValues(alpha: 0.15),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Text(
+                                selectedLang == WhatsAppMessageLanguage.odia
+                                    ? '⚠️ ସୂଚନା: ପେମେଣ୍ଟ କରିସାରିବା ପରେ Payment Screenshot ଏହି ନମ୍ବର କିମ୍ବା WhatsApp Group ରେ ନିଶ୍ଚୟ ପଠାନ୍ତୁ।'
+                                    : '⚠️ Note: After payment, please send the payment screenshot on this number or committee WhatsApp group.',
+                                style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w500),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 16),
 
-                      // Option 2: English
-                      InkWell(
-                        borderRadius: BorderRadius.circular(12),
-                        onTap: canEdit
-                            ? () {
-                                setDialogState(() {
-                                  selectedLang = WhatsAppMessageLanguage.english;
-                                });
-                              }
-                            : null,
-                        child: Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: selectedLang == WhatsAppMessageLanguage.english
-                                ? const Color(0xFF25D366).withValues(alpha: 0.08)
-                                : Colors.transparent,
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: selectedLang == WhatsAppMessageLanguage.english
-                                  ? const Color(0xFF25D366)
-                                  : AppColors.divider,
-                              width: selectedLang == WhatsAppMessageLanguage.english ? 2 : 1,
-                            ),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Container(
-                                    width: 22,
-                                    height: 22,
-                                    margin: const EdgeInsets.only(right: 8),
-                                    decoration: BoxDecoration(
-                                      shape: BoxShape.circle,
-                                      border: Border.all(
-                                        color: selectedLang == WhatsAppMessageLanguage.english
-                                            ? const Color(0xFF128C7E)
-                                            : Colors.grey.shade400,
-                                        width: 2,
-                                      ),
-                                    ),
-                                    child: selectedLang == WhatsAppMessageLanguage.english
-                                        ? Center(
-                                            child: Container(
-                                              width: 11,
-                                              height: 11,
-                                              decoration: const BoxDecoration(
-                                                shape: BoxShape.circle,
-                                                color: Color(0xFF128C7E),
-                                              ),
-                                            ),
-                                          )
-                                        : null,
-                                  ),
-                                  const SizedBox(width: 4),
-                                  const Text('🌐', style: TextStyle(fontSize: 18)),
-                                  const SizedBox(width: 8),
-                                  const Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          'English',
-                                          style: TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 15,
-                                          ),
-                                        ),
-                                        Text(
-                                          'Standard English reminders and receipt formats',
-                                          style: TextStyle(fontSize: 11, color: Colors.grey),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 8),
-                              Container(
-                                width: double.infinity,
-                                padding: const EdgeInsets.all(10),
-                                decoration: BoxDecoration(
-                                  color: Colors.grey.withValues(alpha: 0.08),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: const Text(
-                                  '🙏 Jay Maa Durga Devi 🙏\nNamaskar Ram bhai,\nDurga Puja Chanda Details:\nTarget: ₹2,000 | Paid: ₹1,000 | Pending: ₹1,000\nPlease clear your pending chanda. Dhanyawad 🙏',
-                                  style: TextStyle(fontSize: 11.5, height: 1.35, color: Colors.black87),
-                                ),
-                              ),
-                            ],
-                          ),
+                      // 3. Live Message Preview
+                      const Text(
+                        '3. Live Message Preview (ମେସେଜ୍ କିପରି ଯିବ):',
+                        style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.textPrimaryLight),
+                      ),
+                      const SizedBox(height: 6),
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF25D366).withValues(alpha: 0.05),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: const Color(0xFF25D366).withValues(alpha: 0.3)),
+                        ),
+                        child: Text(
+                          previewMsg,
+                          style: const TextStyle(fontSize: 11.5, height: 1.4, color: Colors.black87),
                         ),
                       ),
                     ],
@@ -540,14 +568,16 @@ class SettingsScreen extends ConsumerWidget {
                     ),
                     onPressed: () async {
                       Navigator.pop(dialogCtx);
-                      await ref
-                          .read(whatsAppSettingsProvider.notifier)
-                          .setLanguage(selectedLang, updatedBy: userName);
+                      await ref.read(whatsAppSettingsProvider.notifier).updateConfig(
+                            language: selectedLang,
+                            includePaymentQr: includeQr,
+                            updatedBy: userName,
+                          );
                       if (context.mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
                             content: Text(
-                              'WhatsApp message format set to ${selectedLang.displayName} ✅',
+                              'WhatsApp message & QR settings saved (${selectedLang.displayName}) ✅',
                             ),
                             backgroundColor: AppColors.success,
                             duration: const Duration(seconds: 3),

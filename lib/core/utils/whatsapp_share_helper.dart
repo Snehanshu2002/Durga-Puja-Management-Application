@@ -30,7 +30,31 @@ class WhatsAppShareHelper {
     }
   }
 
-  /// Template A: Chanda Due / Pledge Reminder
+  /// Get the currently saved WhatsApp configuration from local preferences
+  static Future<WhatsAppConfig> getSavedConfig() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final code = prefs.getString('whatsapp_message_language');
+      final includeQr = prefs.getBool('whatsapp_include_payment_qr') ?? true;
+      final upiId = prefs.getString('whatsapp_upi_id') ?? '7735382544-7@axl';
+      final payee = prefs.getString('whatsapp_payee_name') ?? 'SNEHANSHU SEKHAR SAHOO';
+      final qrUrl = prefs.getString('whatsapp_qr_image_url') ?? 'https://durga-puja-manager.web.app/payment_qr.jpg';
+      final note = prefs.getString('whatsapp_custom_note');
+
+      return WhatsAppConfig(
+        language: WhatsAppMessageLanguage.fromCode(code),
+        includePaymentQr: includeQr,
+        upiId: upiId,
+        payeeName: payee,
+        qrImageUrl: qrUrl,
+        customNote: note,
+      );
+    } catch (_) {
+      return const WhatsAppConfig();
+    }
+  }
+
+  /// Template A: Chanda Due / Pledge Reminder with optional QR Scanner and screenshot instructions
   static String formatChandaDueReminder({
     required String orgName,
     required String eventName,
@@ -40,39 +64,86 @@ class WhatsAppShareHelper {
     required int paidAmount,
     required int remainingAmount,
     WhatsAppMessageLanguage language = WhatsAppMessageLanguage.odia,
+    WhatsAppConfig? config,
+    bool? includePaymentQr,
+    String? upiId,
+    String? payeeName,
+    String? qrImageUrl,
+    String? customScreenshotNote,
   }) {
+    // If a full WhatsAppConfig is supplied, extract defaults from it
+    final effectiveLang = config?.language ?? language;
+    final effectiveIncludeQr = includePaymentQr ?? config?.includePaymentQr ?? true;
+    final effectiveUpiId = upiId ?? config?.upiId ?? '7735382544-7@axl';
+    final effectivePayee = payeeName ?? config?.payeeName ?? 'SNEHANSHU SEKHAR SAHOO';
+    final effectiveQrUrl = qrImageUrl ?? config?.qrImageUrl ?? 'https://durga-puja-manager.web.app/payment_qr.jpg';
+    final effectiveNote = customScreenshotNote ?? config?.customNote;
+
     // Remove "Pradhan" from member name in greeting as requested
     final cleanedName = memberName.replaceAll(RegExp(r'\s*\bpradhan\b', caseSensitive: false), '').trim();
     final nameToUse = cleanedName.isNotEmpty ? cleanedName : memberName;
+    final isPaid = remainingAmount <= 0;
 
-    if (language == WhatsAppMessageLanguage.english) {
-      return '''
-🙏 Jay Maa Durga Devi 🙏
+    if (effectiveLang == WhatsAppMessageLanguage.english) {
+      final buffer = StringBuffer();
+      buffer.writeln('🙏 Jay Maa Durga Devi 🙏');
+      buffer.writeln();
+      buffer.writeln('Namaskar $nameToUse bhai,');
+      buffer.writeln();
+      buffer.writeln('Durga Puja Chanda Details:');
+      buffer.writeln('Target: ₹$targetAmount');
+      buffer.writeln('Paid: ₹$paidAmount');
+      buffer.writeln('Pending: ₹$remainingAmount');
 
-Namaskar $nameToUse bhai,
+      if (!isPaid && effectiveIncludeQr) {
+        buffer.writeln();
+        buffer.writeln('📲 Scan & Pay using QR Code (PhonePe / GPay / Paytm):');
+        buffer.writeln('UPI ID: $effectiveUpiId ($effectivePayee)');
+        buffer.writeln('QR Scanner: $effectiveQrUrl');
+        buffer.writeln();
+        buffer.writeln('⚠️ Note:');
+        buffer.writeln(effectiveNote ?? 'After payment, please send the payment screenshot on this number or committee WhatsApp group.');
+      }
 
-Durga Puja Chanda Details:
-Target: ₹$targetAmount
-Paid: ₹$paidAmount
-Pending: ₹$remainingAmount
-
-Please clear your pending chanda at your earliest convenience.
-Dhanyawad 🙏'''.trim();
+      buffer.writeln();
+      if (isPaid) {
+        buffer.writeln('Thank you for your generous contribution! 🙏');
+      } else {
+        buffer.writeln('Please clear your pending chanda at your earliest convenience.');
+        buffer.writeln('Dhanyawad 🙏');
+      }
+      return buffer.toString().trim();
     }
 
     // Default Odia format
-    return '''
-🙏 ଜୟ ମା ଦୁର୍ଗା 🙏
+    final buffer = StringBuffer();
+    buffer.writeln('🙏 ଜୟ ମା ଦୁର୍ଗା 🙏');
+    buffer.writeln();
+    buffer.writeln('ନମସ୍କାର $nameToUse ଭାଇ,');
+    buffer.writeln();
+    buffer.writeln('ଦୁର୍ଗା ପୂଜା ଚାନ୍ଦା ବିବରଣୀ:');
+    buffer.writeln('ଧାର୍ଯ୍ୟ ଚାନ୍ଦା (Target): ₹$targetAmount');
+    buffer.writeln('ପୈଠ ରାଶି (Paid): ₹$paidAmount');
+    buffer.writeln('ବାକି ରାଶି (Pending): ₹$remainingAmount');
 
-ନମସ୍କାର $nameToUse ଭାଇ,
+    if (!isPaid && effectiveIncludeQr) {
+      buffer.writeln();
+      buffer.writeln('📲 QR Code ସ୍କାନର୍ରେ Pay କରନ୍ତୁ (PhonePe / GPay / Paytm):');
+      buffer.writeln('UPI ID: $effectiveUpiId ($effectivePayee)');
+      buffer.writeln('QR Scanner Link: $effectiveQrUrl');
+      buffer.writeln();
+      buffer.writeln('⚠️ ସୂଚନା:');
+      buffer.writeln(effectiveNote ?? 'ପେମେଣ୍ଟ କରିସାରିବା ପରେ Payment Screenshot ଏହି ନମ୍ବର କିମ୍ବା WhatsApp Group ରେ ନିଶ୍ଚୟ ପଠାନ୍ତୁ।');
+    }
 
-ଦୁର୍ଗା ପୂଜା ଚାନ୍ଦା ବିବରଣୀ:
-ଧାର୍ଯ୍ୟ ଚାନ୍ଦା (Target): ₹$targetAmount
-ପୈଠ ରାଶି (Paid): ₹$paidAmount
-ବାକି ରାଶି (Pending): ₹$remainingAmount
-
-ଦୟାକରି ଆପଣଙ୍କର ବକେୟା ଚାନ୍ଦା ପୈଠ କରି ସହଯୋଗ କରନ୍ତୁ।
-ଧନ୍ୟବାଦ 🙏'''.trim();
+    buffer.writeln();
+    if (isPaid) {
+      buffer.writeln('ଆପଣଙ୍କ ସହଯୋଗ ପାଇଁ ଅଶେଷ ଧନ୍ୟବାଦ! 🙏');
+    } else {
+      buffer.writeln('ଦୟାକରି ଆପଣଙ୍କର ବକେୟା ଚାନ୍ଦା ପୈଠ କରି ସହଯୋଗ କରନ୍ତୁ।');
+      buffer.writeln('ଧନ୍ୟବାଦ 🙏');
+    }
+    return buffer.toString().trim();
   }
 
   /// Template B: Approved Collection Receipt Acknowledgement
@@ -123,7 +194,7 @@ Jay Maa Durga! 🙏'''.trim();
 ତାରିଖ: $formattedDate
 ଆଦାୟକାରୀ: $collectedBy
 
-ମା ଦୁର୍ଗା ଆପଣଙ୍କ ଓ ଆପଣଙ୍କ ପରିବାରର ମଙ୍ଗଳ କରନ୍ତୁ! 🙏'''.trim();
+ମା ଦୁର୍ଗା ଆପଣଙ୍କ ଓ ଆପଙ୍କ ପରିବାରର ମଙ୍ଗଳ କରନ୍ତୁ! 🙏'''.trim();
   }
 
   /// 1-Tap WhatsApp Share with graceful fallback to system share / clipboard
@@ -193,6 +264,146 @@ Jay Maa Durga! 🙏'''.trim();
       }
       return false;
     }
+  }
+
+  /// Direct Share of the PhonePe Payment QR Scanner Image File
+  static Future<void> sharePaymentQrImage({
+    required BuildContext context,
+    String? caption,
+  }) async {
+    try {
+      final byteData = await rootBundle.load('assets/images/payment_qr.jpg');
+      final bytes = byteData.buffer.asUint8List();
+      final xfile = XFile.fromData(
+        bytes,
+        mimeType: 'image/jpeg',
+        name: 'phonepe_durga_puja_qr.jpg',
+      );
+      final defaultCaption = caption ??
+          '🙏 ଜୟ ମା ଦୁର୍ଗା 🙏\nଦୁର୍ଗା ପୂଜା ଚାନ୍ଦା ପେମେଣ୍ଟ QR Scanner (PhonePe / GPay / Paytm)\nUPI ID: 7735382544-7@axl (SNEHANSHU SEKHAR SAHOO)\n⚠️ Payment କଲା ପରେ Screenshot ଏହି ନମ୍ବର କିମ୍ବା WhatsApp Group ରେ ନିଶ୍ଚୟ ପଠାନ୍ତୁ।';
+      await Share.shareXFiles([xfile], text: defaultCaption);
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Could not share QR image: $e'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    }
+  }
+
+  /// Interactive Modal Dialog displaying the PhonePe QR Scanner with 1-Tap Share
+  static void showPaymentQrDialog(BuildContext context, {WhatsAppConfig? config}) {
+    final cfg = config ?? const WhatsAppConfig();
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        titlePadding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 20),
+        title: const Row(
+          children: [
+            Icon(Icons.qr_code_scanner_rounded, color: Color(0xFF5f259f), size: 24),
+            SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                'PhonePe Payment QR Scanner',
+                style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        ),
+        content: SizedBox(
+          width: 360,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const SizedBox(height: 8),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: Image.asset(
+                    'assets/images/payment_qr.jpg',
+                    height: 290,
+                    fit: BoxFit.contain,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: AppColors.divider),
+                  ),
+                  child: Column(
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text('UPI ID:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                          Text(cfg.upiId, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12, color: Color(0xFF5f259f))),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text('Payee Name:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                          Text(cfg.payeeName, style: const TextStyle(fontSize: 12)),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.amber.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Row(
+                    children: [
+                      Icon(Icons.info_outline, color: Colors.amber, size: 18),
+                      SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Payment କଲା ପରେ Screenshot ଏହି ନମ୍ବର କିମ୍ବା WhatsApp Group ରେ ନିଶ୍ଚୟ ପଠାନ୍ତୁ।',
+                          style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w500),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 8),
+              ],
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Close'),
+          ),
+          ElevatedButton.icon(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF25D366),
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            ),
+            onPressed: () {
+              Navigator.pop(ctx);
+              sharePaymentQrImage(context: context);
+            },
+            icon: const Icon(Icons.share, size: 16),
+            label: const Text('Share QR Image'),
+          ),
+        ],
+      ),
+    );
   }
 
   /// Convenience helper for donation receipt sharing
